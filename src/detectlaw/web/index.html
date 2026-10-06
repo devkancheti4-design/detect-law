@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Detect Law</title>
+<style>
+/* Layout: one centred column; the text field is the page, the verdict appears under it. */
+:root {
+  --bg: #fbfbfd; --surface: #ffffff; --ink: #1d1d1f; --muted: #6e6e73; --line: #d2d2d7;
+  --accent: #0071e3; --ai: #c1121f; --ok: #1a7f37; --wait: #8a6d00; --field: #f5f5f7;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #000; --surface: #1c1c1e; --ink: #f5f5f7; --muted: #a1a1a6; --line: #38383a;
+          --accent: #2997ff; --ai: #ff6961; --ok: #30d158; --wait: #ffd60a; --field: #1c1c1e; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 17px/1.47 var(--sans); -webkit-font-smoothing: antialiased; }
+main { max-width: 860px; margin: 0 auto; padding: 56px 20px 80px; display: grid; gap: 28px; }
+header { display: grid; gap: 8px; text-align: center; }
+h1 { font: 600 clamp(40px, 7vw, 64px)/1.05 var(--display); letter-spacing: -0.015em; margin: 0; text-wrap: balance; }
+.lede { font-size: 21px; color: var(--muted); margin: 0; text-wrap: balance; }
+.privacy { font-size: 14px; color: var(--muted); }
+.privacy b { color: var(--ink); font-weight: 600; }
+.card { background: var(--surface); border-radius: 22px; padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 28px rgba(0,0,0,.06); }
+textarea { width: 100%; min-height: 300px; resize: vertical; border: 0; outline: 0; background: var(--field);
+           color: var(--ink); border-radius: 14px; padding: 18px; font: 17px/1.55 var(--sans); }
+textarea:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); }
+.drop textarea { box-shadow: 0 0 0 3px var(--accent); }
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
+.count { color: var(--muted); font-size: 14px; margin-right: auto; font-variant-numeric: tabular-nums; }
+button, .file { appearance: none; border: 0; cursor: pointer; font: 500 15px/1 var(--sans); border-radius: 980px; padding: 11px 20px; }
+.primary { background: var(--accent); color: #fff; }
+.primary:disabled { opacity: .45; cursor: default; }
+.ghost, .file { background: transparent; color: var(--accent); }
+.ghost:hover, .file:hover { text-decoration: underline; }
+button:focus-visible, .file:focus-within { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+.file input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.seg { display: inline-flex; background: var(--field); border-radius: 980px; padding: 3px; gap: 2px; }
+.seg input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.seg label { font: 500 13px/1 var(--sans); padding: 8px 14px; border-radius: 980px; cursor: pointer; color: var(--muted); }
+.seg input:checked + label { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.seg input:focus-visible + label { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+.modehelp { font-size: 13px; color: var(--muted); margin: 10px 0 0 4px; }
+#result { display: grid; gap: 18px; }
+.verdict { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.verdict .word { font: 600 40px/1.1 var(--display); letter-spacing: -0.01em; }
+.v-ai .word { color: var(--ai); } .v-no_evidence .word { color: var(--ok); } .v-undecided .word { color: var(--wait); }
+.meaning { margin: 0; color: var(--ink); max-width: 64ch; }
+.meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.meter { background: var(--field); border-radius: 14px; padding: 14px 16px; display: grid; gap: 8px; min-width: 0; }
+.meter .k { font-size: 13px; color: var(--muted); letter-spacing: .02em; }
+.meter .v { font: 600 24px/1 var(--display); font-variant-numeric: tabular-nums; }
+.track { position: relative; height: 6px; border-radius: 3px; background: var(--line); }
+.track i { position: absolute; top: -3px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); transform: translateX(-50%); }
+.track b { position: absolute; left: 50%; top: -4px; width: 1px; height: 14px; background: var(--muted); }
+.scale { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.facts { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+details { font-size: 14px; color: var(--muted); }
+pre { overflow-x: auto; background: var(--field); border-radius: 12px; padding: 14px; font: 12.5px/1.5 var(--mono); color: var(--ink); }
+.err { color: var(--ai); font-size: 15px; }
+.busy { display: inline-block; width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -3px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .busy { animation: none; } }
+footer { text-align: center; font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Detect Law</h1>
+    <p class="lede">Check whether text shows evidence of being written by AI.</p>
+    <p class="privacy"><b>Runs on this computer.</b> Nothing is uploaded. Free, with no word limit.</p>
+  </header>
+
+  <section class="card" id="input">
+    <label for="text" class="privacy" style="display:block;margin:0 0 10px 4px">Paste text, or drop a .txt, .md, .docx or .pdf file</label>
+    <textarea id="text" placeholder="Paste an essay, article or answer here. 200 words or more works best."></textarea>
+    <div class="bar">
+      <span class="count" id="count">0 words</span>
+      <div class="seg" role="radiogroup" aria-label="Mode">
+        <input type="radio" name="mode" id="m-careful" value="careful" checked><label for="m-careful">Careful</label>
+        <input type="radio" name="mode" id="m-official" value="official"><label for="m-official">Official</label>
+      </div>
+      <button class="ghost" id="clear" type="button">Clear</button>
+      <label class="file">Open file…<input id="file" type="file" accept=".txt,.md,.docx,.pdf"></label>
+      <button class="primary" id="go" type="button" disabled>Check text</button>
+    </div>
+    <p class="modehelp" id="modehelp"></p>
+  </section>
+
+  <section class="card" id="result" hidden></section>
+
+  <footer>
+    <span>A verdict is statistical evidence, not proof. Send <b>AI</b> verdicts to a person for review.</span>
+    <span>THE DETECT LAW v7 · two open Llama 3.2 1B models · <a href="/docs">API</a> · <a href="/v1/info">Measured results</a></span>
+  </footer>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const text = $("text"), go = $("go"), out = $("result"), count = $("count");
+const WORDS = { ai: "AI evidence", no_evidence: "No evidence of AI", undecided: "Undecided" };
+const HELP = {
+  careful: "Careful mode flags fewer human texts by mistake. Best for checking people's work.",
+  official: "Official mode is the exact setup scored on the RAID benchmark. It catches a little more AI text and wrongly flags more human text.",
+};
+const mode = () => document.querySelector('input[name="mode"]:checked').value;
+function setHelp() { $("modehelp").textContent = HELP[mode()]; }
+document.querySelectorAll('input[name="mode"]').forEach((r) => r.addEventListener("change", setHelp));
+setHelp();
+
+function words(s) { return (s.trim().match(/\S+/g) || []).length; }
+function update() {
+  const n = words(text.value);
+  count.textContent = n.toLocaleString() + (n === 1 ? " word" : " words") + (n && n < 120 ? " · short texts are often undecided" : "");
+  go.disabled = n === 0;
+}
+text.addEventListener("input", update);
+$("clear").addEventListener("click", () => { text.value = ""; out.hidden = true; update(); text.focus(); });
+
+function pos(z) { const c = Math.max(-6, Math.min(6, z ?? 0)); return ((c + 6) / 12 * 100).toFixed(1) + "%"; }
+function meter(label, z, help) {
+  return `<div class="meter"><span class="k">${label}</span><span class="v">${z == null ? "–" : (z > 0 ? "+" : "") + z.toFixed(2)}</span>
+    <div class="track"><b></b>${z == null ? "" : `<i style="left:${pos(z)}"></i>`}</div>
+    <div class="scale"><span>human-like</span><span>${help}</span><span>AI-like</span></div></div>`;
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+function show(r) {
+  const e = r.evidence || {};
+  out.className = "card v-" + r.verdict;
+  out.innerHTML = `
+    <div class="verdict"><span class="word">${WORDS[r.verdict]}</span>${r.file ? `<span class="facts">${esc(r.file)}</span>` : ""}</div>
+    <p class="meaning">${esc(r.meaning)}</p>
+    <div class="meters">
+      ${meter("Surprise · how predictable the wording is", e.surprise_z, "z-score")}
+      ${meter("Contrast · chosen like a chat model", e.contrast_z, "z-score")}
+    </div>
+    <div class="facts">${r.mode === "official" ? "Official" : "Careful"} mode · read ${r.tokens_read.toLocaleString()} of ${r.tokens_in_text.toLocaleString()} tokens${r.decided_early ? " · stopped early, the evidence was decisive" : ""} · ${(r.latency_ms / 1000).toFixed(1)} s</div>
+    <details><summary>Full result</summary><pre>${esc(JSON.stringify(r, null, 2))}</pre></details>`;
+  out.hidden = false;
+  out.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
+}
+function fail(msg) { out.className = "card"; out.innerHTML = `<p class="err">${esc(msg)}</p>`; out.hidden = false; }
+
+async function run(req) {
+  go.disabled = true; const label = go.textContent; go.innerHTML = '<span class="busy"></span> Checking';
+  try {
+    const res = await req();
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.detail ? (typeof body.detail === "string" ? body.detail : "The text could not be read.") : "The check failed (" + res.status + ").");
+    show(body);
+  } catch (err) {
+    fail(err.message.includes("fetch") ? "Can’t reach the detector. Is detect-law-server still running?" : err.message);
+  } finally { go.textContent = label; update(); }
+}
+go.addEventListener("click", () => run(() => fetch("/v1/detect", {
+  method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: text.value, mode: mode() }) })));
+
+async function openFile(f) {
+  if (!f) return;
+  if (/\.(txt|md)$/i.test(f.name)) { text.value = await f.text(); update(); return; }
+  if (!/\.(docx|pdf)$/i.test(f.name)) { fail("Use a .txt, .md, .docx or .pdf file."); return; }
+  run(() => fetch("/v1/detect-file?name=" + encodeURIComponent(f.name) + "&mode=" + mode(), { method: "POST", body: f }));
+}
+$("file").addEventListener("change", (e) => { openFile(e.target.files[0]); e.target.value = ""; });
+const card = $("input");
+card.addEventListener("dragover", (e) => { e.preventDefault(); card.classList.add("drop"); });
+card.addEventListener("dragleave", () => card.classList.remove("drop"));
+card.addEventListener("drop", (e) => { e.preventDefault(); card.classList.remove("drop"); openFile(e.dataTransfer.files[0]); });
+update();
+</script>
+</body>
+</html>

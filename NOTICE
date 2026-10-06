@@ -1,0 +1,11 @@
+detect-law
+
+Built with Llama.
+
+This software downloads and runs Meta Llama 3.2 models (Llama-3.2-1B and
+Llama-3.2-1B-Instruct). Llama 3.2 is licensed under the Llama 3.2 Community
+License, Copyright (c) Meta Platforms, Inc. All Rights Reserved. Use of the models
+must comply with that license and with Meta's Acceptable Use Policy:
+https://www.llama.com/llama3_2/license/
+
+The model weights are not included in this package.

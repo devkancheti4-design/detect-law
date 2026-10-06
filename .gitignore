@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.egg-info/
+build/
+dist/
+src/detectlaw/law/liblaw_v7.*
+tests/eval_v7
+tests/eval_v7_san*
+.DS_Store

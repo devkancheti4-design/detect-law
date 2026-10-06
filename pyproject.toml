@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "detect-law"
+version = "0.2.0"
+description = "Zero-shot AI-text detection that runs on your own computer: an exact int32 decision law over two small open models. Web app, CLI, HTTP API and MCP server."
+readme = "README.md"
+requires-python = ">=3.10"
+# License: not chosen yet. Until a license is added, all rights are reserved.
+dependencies = [
+    "numpy",
+    "huggingface_hub",
+    "fastapi",
+    "uvicorn",
+    "mcp>=1.2",
+    "pypdf",
+    # Apple Silicon: MLX. Everywhere else: PyTorch (NVIDIA GPU if present, otherwise CPU).
+    "mlx>=0.20; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "mlx-lm>=0.20; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "torch>=2.2; sys_platform != 'darwin' or platform_machine != 'arm64'",
+    "transformers>=4.45; sys_platform != 'darwin' or platform_machine != 'arm64'",
+]
+
+[project.scripts]
+detect-law = "detectlaw.cli:main"
+detect-law-server = "detectlaw.server:run"
+detect-law-mcp = "detectlaw.mcp_server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+detectlaw = ["law/detect_v7.c", "web/index.html"]

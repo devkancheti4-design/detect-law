@@ -1,0 +1,452 @@
+<title>Detect Law</title>
+<style>
+/* Layout: Apple-style product page. Full-bleed alternating bands, one centred 980px column,
+   giant numerals for the official scores, quiet fine print under every claim. */
+:root {
+  --bg: #fbfbfd; --band: #f5f5f7; --surface: #ffffff; --ink: #1d1d1f; --muted: #6e6e73; --line: #d2d2d7;
+  --accent: #0071e3; --ours: #0071e3; --them: #b8b8bf; --good: #1a7f37; --warn: #a15c00; --bad: #c1121f;
+  --nav: rgba(251, 251, 253, 0.78); --code: #f0f0f3;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --band: #0d0d0f; --surface: #1c1c1e; --ink: #f5f5f7; --muted: #a1a1a6; --line: #38383a;
+    --accent: #2997ff; --ours: #2997ff; --them: #5a5a5f; --good: #30d158; --warn: #ffb340; --bad: #ff6961;
+    --nav: rgba(0, 0, 0, 0.72); --code: #1c1c1e; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --band: #0d0d0f; --surface: #1c1c1e; --ink: #f5f5f7; --muted: #a1a1a6; --line: #38383a;
+  --accent: #2997ff; --ours: #2997ff; --them: #5a5a5f; --good: #30d158; --warn: #ffb340; --bad: #ff6961;
+  --nav: rgba(0, 0, 0, 0.72); --code: #1c1c1e; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 17px/1.47 var(--sans); -webkit-font-smoothing: antialiased; margin: 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible, button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; border-radius: 6px; }
+.wrap { max-width: 980px; margin: 0 auto; padding-inline: 22px; }
+section { padding-block: 88px; }
+.band { background: var(--band); }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+h2 { font-size: clamp(34px, 5.4vw, 56px); line-height: 1.07; font-weight: 600; letter-spacing: -0.015em; }
+h3 { font-size: 21px; font-weight: 600; letter-spacing: -0.005em; }
+.eyebrow { font-size: 17px; font-weight: 600; color: var(--muted); margin: 0 0 10px; }
+.lead { font-size: clamp(19px, 2.4vw, 24px); line-height: 1.38; color: var(--muted); margin: 18px 0 0; max-width: 40ch; }
+.center { text-align: center; }
+.center .lead { margin-inline: auto; }
+.fine { font-size: 13px; line-height: 1.5; color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* nav */
+nav.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--nav);
+  backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--line); }
+nav.top .wrap { display: flex; align-items: center; gap: 22px; height: 52px; overflow-x: auto; scrollbar-width: none; }
+nav.top .brand { font: 600 19px/1 var(--display); color: var(--ink); margin-right: auto; white-space: nowrap; }
+nav.top a:not(.brand) { font-size: 13px; color: var(--ink); opacity: .8; white-space: nowrap; }
+nav.top .pill { background: var(--accent); color: #fff; opacity: 1; padding: 5px 12px; border-radius: 980px; }
+
+/* hero */
+.hero { padding-block: 96px 72px; text-align: center; }
+.hero h1 { font-size: clamp(44px, 8.2vw, 88px); line-height: 1.04; font-weight: 700; letter-spacing: -0.025em; }
+.hero h1 span { background: linear-gradient(100deg, var(--accent), color-mix(in srgb, var(--accent) 45%, #af52de)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero .lead { margin: 22px auto 0; max-width: 34ch; }
+.ctas { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 30px; }
+.btn { display: inline-block; font-size: 17px; padding: 12px 24px; border-radius: 980px; border: 1px solid var(--accent); }
+.btn.fill { background: var(--accent); color: #fff; }
+.btn:hover { text-decoration: none; filter: brightness(1.06); }
+.duel { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 18px; max-width: 760px; margin: 64px auto 0; }
+.duel .side { display: grid; gap: 6px; }
+.duel .big { font: 700 clamp(56px, 11vw, 112px)/0.95 var(--display); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.duel .us .big { color: var(--ours); }
+.duel .them .big { color: var(--muted); }
+.duel .who { font-size: 17px; font-weight: 600; }
+.duel .vs { font: 600 21px/1 var(--display); color: var(--muted); padding-bottom: 22px; }
+.hero .fine { max-width: 60ch; margin: 22px auto 0; }
+
+/* tiles */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-top: 48px; }
+.tile { background: var(--surface); border-radius: 22px; padding: 28px; display: grid; gap: 8px; align-content: start; }
+.tile .v { font: 700 54px/1 var(--display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.tile .k { font-size: 15px; color: var(--muted); }
+
+/* bar charts */
+.chart { background: var(--surface); border-radius: 22px; padding: 28px; margin-top: 22px; display: grid; gap: 16px; }
+.chart h3 { margin-bottom: 2px; }
+.row { display: grid; grid-template-columns: 150px 1fr 64px; gap: 14px; align-items: center; }
+.row .lbl { font-size: 15px; min-width: 0; }
+.row .val { font-size: 15px; text-align: right; font-variant-numeric: tabular-nums; }
+.track { position: relative; height: 12px; border-radius: 6px; background: var(--band); overflow: hidden; }
+.track i { position: absolute; inset: 0 auto 0 0; border-radius: 6px; background: var(--them); }
+.row.us .track i { background: var(--ours); }
+.row.us .lbl, .row.us .val { font-weight: 600; }
+.pair { display: grid; gap: 5px; }
+.pair .track { height: 9px; }
+.pair .track.ours i { background: var(--ours); }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.legend b { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.axis { display: grid; grid-template-columns: 150px 1fr 64px; gap: 14px; font-size: 12px; color: var(--muted); }
+.axis span:nth-child(2) { display: flex; justify-content: space-between; }
+.notes { margin: 22px 0 0; padding-left: 18px; display: grid; gap: 6px; color: var(--muted); font-size: 15px; }
+
+/* how it works */
+.cards3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; margin-top: 48px; }
+.card { background: var(--surface); border-radius: 22px; padding: 28px; display: grid; gap: 10px; align-content: start; }
+.card p { margin: 0; color: var(--muted); }
+.card .glyph { font: 600 13px/1 var(--mono); color: var(--accent); letter-spacing: .04em; }
+.verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; margin-top: 18px; }
+.verdict { border: 1px solid var(--line); border-radius: 18px; padding: 20px 22px; display: grid; gap: 6px; }
+.verdict .w { font: 600 22px/1.1 var(--display); }
+.verdict.ai .w { color: var(--bad); } .verdict.ok .w { color: var(--good); } .verdict.un .w { color: var(--warn); }
+.verdict p { margin: 0; font-size: 15px; color: var(--muted); }
+
+/* examples */
+.examples { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; margin-top: 48px; }
+.ex { background: var(--surface); border-radius: 22px; padding: 24px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.ex .src { font-size: 13px; color: var(--muted); }
+.ex blockquote { margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink); border-left: 2px solid var(--line); padding-left: 12px; }
+.ex .res { font: 600 19px/1.2 var(--display); }
+.ex.ai .res { color: var(--bad); } .ex.ok .res { color: var(--good); }
+.ex dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 14px; }
+.ex dt { color: var(--muted); } .ex dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
+
+/* cost */
+.split { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-top: 48px; }
+.panel { background: var(--surface); border-radius: 22px; padding: 28px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+th { font-size: 13px; font-weight: 600; color: var(--muted); }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.us td { font-weight: 600; color: var(--ours); }
+.huge { font: 700 clamp(48px, 8vw, 80px)/1 var(--display); letter-spacing: -0.03em; }
+
+/* install */
+.steps { display: grid; gap: 18px; margin-top: 48px; }
+.step { background: var(--surface); border-radius: 22px; padding: 26px 28px; display: grid; gap: 12px; min-width: 0; }
+.step p { margin: 0; color: var(--muted); }
+.cmd { position: relative; background: var(--code); border-radius: 12px; min-width: 0; }
+.cmd pre { margin: 0; padding: 14px 92px 14px 16px; overflow-x: auto; font: 14px/1.55 var(--mono); color: var(--ink); white-space: pre; }
+.cmd button { position: absolute; top: 9px; right: 9px; border: 0; cursor: pointer; font: 500 13px/1 var(--sans); padding: 7px 12px; border-radius: 980px; background: var(--surface); color: var(--accent); }
+.tools { display: flex; gap: 10px; flex-wrap: wrap; }
+.tools code { font: 13px/1 var(--mono); background: var(--code); border-radius: 8px; padding: 7px 10px; }
+.req { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 8px; }
+.req div { font-size: 15px; } .req b { display: block; font-size: 13px; color: var(--muted); font-weight: 600; }
+
+/* limits */
+.limits { margin-top: 40px; display: grid; gap: 0; border-top: 1px solid var(--line); }
+.limits div { display: grid; grid-template-columns: 220px 1fr; gap: 18px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.limits b { font-weight: 600; } .limits span { color: var(--muted); }
+footer { padding-block: 40px 56px; border-top: 1px solid var(--line); }
+footer p { margin: 0 0 6px; }
+
+@media (max-width: 640px) {
+  section { padding-block: 64px; }
+  .duel { grid-template-columns: 1fr; gap: 26px; }
+  .duel .vs { padding: 0; }
+  .row, .axis { grid-template-columns: 96px 1fr 52px; gap: 10px; }
+  .limits div { grid-template-columns: 1fr; gap: 4px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .track i { transition: width .9s cubic-bezier(.2,.7,.2,1); }
+}
+</style>
+
+<nav class="top" aria-label="Sections">
+  <div class="wrap">
+    <a class="brand" href="#top">Detect Law</a>
+    <a href="#results">Results</a>
+    <a href="#how">How it works</a>
+    <a href="#free">Free</a>
+    <a href="#mcp">MCP</a>
+    <a href="#limits">Limits</a>
+    <a class="pill" href="#install">Install</a>
+  </div>
+</nav>
+
+<header class="hero wrap" id="top">
+  <p class="eyebrow">THE DETECT LAW v7 · zero-shot AI-text detection</p>
+  <h1>Beat Binoculars.<br><span>On the official RAID test.</span></h1>
+  <p class="lead">Two small open models and one integer law. It runs on your own computer, and it is free.</p>
+  <div class="ctas">
+    <a class="btn fill" href="#install">Install</a>
+    <a class="btn" href="#results">See the results</a>
+  </div>
+  <div class="duel" role="group" aria-label="Official RAID score comparison">
+    <div class="side us"><span class="big">80.08%</span><span class="who">Detect Law</span></div>
+    <span class="vs">vs</span>
+    <div class="side them"><span class="big">78.98%</span><span class="who">Binoculars</span></div>
+  </div>
+  <p class="fine">Share of AI-written texts caught while flagging only 5% of human texts, on RAID's 672,000-text test set without adversarial attacks. Scored by RAID's own evaluation bot on 6 October 2026 and listed on the <a href="https://raid-bench.xyz/leaderboard">RAID leaderboard</a>. Official mode.</p>
+</header>
+
+<section class="band" id="results">
+  <div class="wrap">
+    <p class="eyebrow">Official results</p>
+    <h2>The best zero-shot score on RAID.</h2>
+    <p class="lead">RAID is the largest public benchmark for AI-text detectors: 11 generators, 8 domains, 4 sampling settings and 11 attacks. No detector sees the test answers.</p>
+    <div class="tiles">
+      <div class="tile"><span class="v num">80.08%</span><span class="k">AI text caught at 5% false positives, no attacks</span></div>
+      <div class="tile"><span class="v num">77.00%</span><span class="k">All 672,000 texts, including 11 adversarial attacks</span></div>
+      <div class="tile"><span class="v num">90.56</span><span class="k">AUROC without attacks (89.86 with attacks)</span></div>
+    </div>
+
+    <div class="chart" aria-label="Zero-shot detectors on the RAID leaderboard">
+      <h3>Zero-shot detectors on the RAID leaderboard</h3>
+      <span class="fine">Same metric: AI text caught at 5% false positives, no attacks.</span>
+      <div class="row us"><span class="lbl">Detect Law</span><div class="track"><i style="width:80.08%"></i></div><span class="val">80.08</span></div>
+      <div class="row"><span class="lbl">Binoculars</span><div class="track"><i style="width:78.98%"></i></div><span class="val">78.98</span></div>
+      <div class="row"><span class="lbl">GLTR</span><div class="track"><i style="width:59.69%"></i></div><span class="val">59.69</span></div>
+      <div class="row"><span class="lbl">LLMDet</span><div class="track"><i style="width:33.40%"></i></div><span class="val">33.40</span></div>
+      <div class="axis" aria-hidden="true"><span></span><span><span>0</span><span>50</span><span>100%</span></span><span></span></div>
+    </div>
+
+    <ul class="notes">
+      <li>At the stricter 1% false-positive setting, Binoculars leads: 69.54% against 68.92%.</li>
+      <li>Fast-DetectGPT submitted only 6 of the 8 domains. Detect Law scores higher in 5 of those 6.</li>
+      <li>Trained classifiers score higher, up to 99.98%. Across all 43 ranked detectors, Detect Law places 34th.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="domains">
+  <div class="wrap">
+    <p class="eyebrow">Domain by domain</p>
+    <h2>Ahead in 5 of 8 domains.</h2>
+    <p class="lead">Strongest on scientific abstracts, Wikipedia and news. Binoculars stays ahead on poetry, Reddit and recipes.</p>
+    <div class="chart" aria-label="Per-domain comparison with Binoculars">
+      <div class="legend"><span><b style="background:var(--ours)"></b>Detect Law</span><span><b style="background:var(--them)"></b>Binoculars</span><span>AI text caught at 5% false positives, no attacks</span></div>
+      <div class="row"><span class="lbl">Abstracts</span><div class="pair"><div class="track ours"><i style="width:86.7%"></i></div><div class="track"><i style="width:76.0%"></i></div></div><span class="val">86.7<br><span class="fine">76.0</span></span></div>
+      <div class="row"><span class="lbl">Wikipedia</span><div class="pair"><div class="track ours"><i style="width:82.9%"></i></div><div class="track"><i style="width:76.5%"></i></div></div><span class="val">82.9<br><span class="fine">76.5</span></span></div>
+      <div class="row"><span class="lbl">News</span><div class="pair"><div class="track ours"><i style="width:82.0%"></i></div><div class="track"><i style="width:80.7%"></i></div></div><span class="val">82.0<br><span class="fine">80.7</span></span></div>
+      <div class="row"><span class="lbl">Books</span><div class="pair"><div class="track ours"><i style="width:83.7%"></i></div><div class="track"><i style="width:82.8%"></i></div></div><span class="val">83.7<br><span class="fine">82.8</span></span></div>
+      <div class="row"><span class="lbl">Reviews</span><div class="pair"><div class="track ours"><i style="width:78.4%"></i></div><div class="track"><i style="width:78.0%"></i></div></div><span class="val">78.4<br><span class="fine">78.0</span></span></div>
+      <div class="row"><span class="lbl">Reddit</span><div class="pair"><div class="track ours"><i style="width:77.8%"></i></div><div class="track"><i style="width:81.3%"></i></div></div><span class="val">77.8<br><span class="fine">81.3</span></span></div>
+      <div class="row"><span class="lbl">Recipes</span><div class="pair"><div class="track ours"><i style="width:73.9%"></i></div><div class="track"><i style="width:76.4%"></i></div></div><span class="val">73.9<br><span class="fine">76.4</span></span></div>
+      <div class="row"><span class="lbl">Poetry</span><div class="pair"><div class="track ours"><i style="width:75.3%"></i></div><div class="track"><i style="width:80.1%"></i></div></div><span class="val">75.3<br><span class="fine">80.1</span></span></div>
+      <div class="axis" aria-hidden="true"><span></span><span><span>0</span><span>50</span><span>100%</span></span><span></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="attacks">
+  <div class="wrap">
+    <p class="eyebrow">Under attack</p>
+    <h2>The zero-shot detector that holds up.</h2>
+    <p class="lead">Ahead of Binoculars on 9 of the 10 attacks both were tested on, by up to 44 points. Hidden characters and look-alike letters are cleaned away before scoring.</p>
+    <div class="tiles">
+      <div class="tile"><span class="v num">77.6%</span><span class="k">Detect Law, average over the 10 shared attacks</span></div>
+      <div class="tile"><span class="v num" style="color:var(--muted)">69.3%</span><span class="k">Binoculars, same 10 attacks</span></div>
+      <div class="tile"><span class="v num">68.3%</span><span class="k">Detect Law under paraphrase, the hardest attack. GLTR 43.0%, LLMDet 26.1%</span></div>
+    </div>
+    <div class="chart" aria-label="Detection by attack, compared with Binoculars">
+      <div class="legend"><span><b style="background:var(--ours)"></b>Detect Law</span><span><b style="background:var(--them)"></b>Binoculars</span><span>AI text caught at 5% false positives, all domains</span></div>
+      <div class="row"><span class="lbl">Homoglyphs</span><div class="pair"><div class="track ours"><i style="width:80.1%"></i></div><div class="track"><i style="width:36.1%"></i></div></div><span class="val">80.1<br><span class="fine">36.1</span></span></div>
+      <div class="row"><span class="lbl">Synonyms</span><div class="pair"><div class="track ours"><i style="width:71.7%"></i></div><div class="track"><i style="width:42.1%"></i></div></div><span class="val">71.7<br><span class="fine">42.1</span></span></div>
+      <div class="row"><span class="lbl">Whitespace</span><div class="pair"><div class="track ours"><i style="width:80.1%"></i></div><div class="track"><i style="width:68.7%"></i></div></div><span class="val">80.1<br><span class="fine">68.7</span></span></div>
+      <div class="row"><span class="lbl">Paragraph breaks</span><div class="pair"><div class="track ours"><i style="width:78.5%"></i></div><div class="track"><i style="width:70.7%"></i></div></div><span class="val">78.5<br><span class="fine">70.7</span></span></div>
+      <div class="row"><span class="lbl">Number swaps</span><div class="pair"><div class="track ours"><i style="width:78.4%"></i></div><div class="track"><i style="width:76.4%"></i></div></div><span class="val">78.4<br><span class="fine">76.4</span></span></div>
+      <div class="row"><span class="lbl">Upper/lower case</span><div class="pair"><div class="track ours"><i style="width:74.5%"></i></div><div class="track"><i style="width:72.8%"></i></div></div><span class="val">74.5<br><span class="fine">72.8</span></span></div>
+      <div class="row"><span class="lbl">Article deletion</span><div class="pair"><div class="track ours"><i style="width:74.9%"></i></div><div class="track"><i style="width:73.3%"></i></div></div><span class="val">74.9<br><span class="fine">73.3</span></span></div>
+      <div class="row"><span class="lbl">Alt. spelling</span><div class="pair"><div class="track ours"><i style="width:78.8%"></i></div><div class="track"><i style="width:77.6%"></i></div></div><span class="val">78.8<br><span class="fine">77.6</span></span></div>
+      <div class="row"><span class="lbl">Misspellings</span><div class="pair"><div class="track ours"><i style="width:78.4%"></i></div><div class="track"><i style="width:77.2%"></i></div></div><span class="val">78.4<br><span class="fine">77.2</span></span></div>
+      <div class="row"><span class="lbl">Paraphrase</span><div class="pair"><div class="track ours"><i style="width:68.3%"></i></div><div class="track"></div></div><span class="val">68.3<br><span class="fine">–</span></span></div>
+      <div class="row"><span class="lbl">Zero-width spaces</span><div class="pair"><div class="track ours"><i style="width:80.1%"></i></div><div class="track"><i style="width:98.4%"></i></div></div><span class="val">80.1<br><span class="fine">98.4</span></span></div>
+      <div class="axis" aria-hidden="true"><span></span><span><span>0</span><span>50</span><span>100%</span></span><span></span></div>
+    </div>
+    <ul class="notes">
+      <li>Binoculars did not submit paraphrase results. Zero-width spaces push its scores toward AI, which raises its catch rate on that attack; Detect Law strips them first.</li>
+      <li>Trained classifiers that learn from RAID-style attacks stay near 99% under paraphrase. Detect Law ranks 33rd of 41 there.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <p class="eyebrow">How it works</p>
+    <h2>Two signals. One integer law.</h2>
+    <p class="lead">No classifier is trained on labelled AI text. The decision is about 150 lines of 32-bit integer C, tested exact and overflow-free under sanitizers.</p>
+    <div class="cards3">
+      <div class="card"><span class="glyph">SURPRISE</span><h3>How predictable is the wording?</h3><p>A base model (Llama 3.2 1B) measures how much cheaper each word is than it expects. Sampled AI text runs cheap.</p></div>
+      <div class="card"><span class="glyph">CONTRAST</span><h3>Chosen like a chat model?</h3><p>A chat-tuned twin (Llama 3.2 1B Instruct) checks whether each word is picked the way assistants pick. Domain vocabulary cancels out.</p></div>
+      <div class="card"><span class="glyph">LAW</span><h3>Stops when it's sure.</h3><p>An anytime-valid test reads 200 tokens at a time and stops as soon as the evidence is decisive. In careful mode it wrongly flagged 0.56% of 1,600 human texts.</p></div>
+    </div>
+    <div class="verdicts">
+      <div class="verdict ai"><span class="w">AI evidence</span><p>Statistical evidence of AI generation. Send it to a person for review.</p></div>
+      <div class="verdict ok"><span class="w">No evidence</span><p>An AI-sized effect was ruled out. Not proof of human authorship.</p></div>
+      <div class="verdict un"><span class="w">Undecided</span><p>Too little text to say. Draw no conclusion.</p></div>
+    </div>
+
+    <div class="chart" aria-label="Careful and official modes">
+      <h3>Two modes. You choose.</h3>
+      <span class="fine">The app's own verdicts on 2,920 labelled RAID texts (1,600 human, 1,320 AI, 8 domains).</span>
+      <div class="scroll"><table>
+        <thead><tr><th>Mode</th><th class="n">Human texts flagged as AI</th><th class="n">AI texts flagged as AI</th><th>Use it for</th></tr></thead>
+        <tbody>
+          <tr class="us"><td>Careful (default)</td><td class="n">0.56%</td><td class="n">61.4%</td><td>Checking people's work</td></tr>
+          <tr><td>Official</td><td class="n">1.69%</td><td class="n">67.0%</td><td>The exact setup behind the RAID score</td></tr>
+        </tbody>
+      </table></div>
+      <span class="fine">Hardest genre: book summaries, flagged 2.5% in careful mode and 8.0% in official mode. The rest are undecided or cleared; short texts are often undecided.</span>
+    </div>
+
+    <div class="examples">
+      <div class="ex ai">
+        <span class="src">RAID · news · ChatGPT</span>
+        <blockquote>Shares in drinks company Pernod Ricard have risen after reports suggested it could be considering a takeover bid for rival firm Jose Cuervo…</blockquote>
+        <span class="res">AI evidence</span>
+        <dl><dt>Decided after</dt><dd>173 of 451 tokens</dd><dt>Surprise z</dt><dd>+2.91</dd><dt>Contrast z</dt><dd>+5.53</dd><dt>Time on a MacBook Pro</dt><dd>0.24 s</dd></dl>
+      </div>
+      <div class="ex ai">
+        <span class="src">RAID · Wikipedia · GPT-4</span>
+        <blockquote>Arnold Johannes Hyacinthus Mühren (born 2 June 1951) is a Dutch former professional footballer who played as a midfielder…</blockquote>
+        <span class="res">AI evidence</span>
+        <dl><dt>Read</dt><dd>491 of 491 tokens</dd><dt>Surprise z</dt><dd>+2.09</dd><dt>Contrast z</dt><dd>+3.95</dd><dt>Time on a MacBook Pro</dt><dd>0.56 s</dd></dl>
+      </div>
+      <div class="ex ok">
+        <span class="src">RAID · Wikipedia · human</span>
+        <blockquote>Josephine Maria Logan, known as Lillie (sometimes Lily) (October 2, 1843 — 1923) was an American painter and instructor, active for many years in Richmond, Virginia…</blockquote>
+        <span class="res">No evidence of AI</span>
+        <dl><dt>Read</dt><dd>302 of 302 tokens</dd><dt>Surprise z</dt><dd>−2.35</dd><dt>Contrast z</dt><dd>+0.82</dd><dt>Time on a MacBook Pro</dt><dd>0.53 s</dd></dl>
+      </div>
+    </div>
+    <p class="fine" style="margin-top:14px">Real output of detect-law 0.2.0 (official mode) on texts with a typical score for their group, taken from RAID's labelled training data.</p>
+  </div>
+</section>
+
+<section class="band" id="free">
+  <div class="wrap">
+    <p class="eyebrow">Free and private</p>
+    <h2>Check 3 billion words. Pay nothing.</h2>
+    <p class="lead">It runs where your text already is. No account, no meter, no upload. Nothing you check ever leaves your computer.</p>
+    <div class="split">
+      <div class="panel">
+        <span class="huge num">84 h</span>
+        <p style="margin:0;color:var(--muted)">of one rented A40 GPU checks 3 billion words, about $40. A Mac with Apple silicon checks about 1.8 billion words a month on its own.</p>
+        <div class="scroll"><table>
+          <thead><tr><th>Measured on</th><th class="n">per 1,000 words</th></tr></thead>
+          <tbody>
+            <tr><td>NVIDIA A40 GPU</td><td class="n">0.10 s</td></tr>
+            <tr><td>MacBook Pro, M4 Pro</td><td class="n">1.4 s</td></tr>
+            <tr><td>CPU only, 4 cores (M4 Pro)</td><td class="n">3.0 s</td></tr>
+          </tbody>
+        </table></div>
+        <span class="fine">Full reading of both models over every token. Long documents often finish sooner because the law stops early.</span>
+      </div>
+      <div class="panel">
+        <h3>What 1,000 words cost elsewhere</h3>
+        <div class="scroll"><table>
+          <thead><tr><th>Detector API</th><th class="n">per 1,000 words</th></tr></thead>
+          <tbody>
+            <tr><td>Pangram</td><td class="n">$0.50</td></tr>
+            <tr><td>GPTZero</td><td class="n">$0.09–0.15</td></tr>
+            <tr><td>Originality.ai</td><td class="n">$0.09–0.12</td></tr>
+            <tr><td>Winston AI</td><td class="n">$0.05–0.10</td></tr>
+            <tr><td>Sapling</td><td class="n">$0.015–0.03</td></tr>
+            <tr class="us"><td>Detect Law, on your machine</td><td class="n">$0</td></tr>
+          </tbody>
+        </table></div>
+        <span class="fine">Published list prices, checked 6 October 2026. These services use trained classifiers that score higher on RAID; they also need your text sent to their servers.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <p class="eyebrow">Install</p>
+    <h2>One command. Then it's yours.</h2>
+    <p class="lead">You get a web app, a command line tool, an HTTP API and an MCP server. The two models download once, about 5 GB.</p>
+    <div class="steps">
+      <div class="step">
+        <h3>1. Install</h3>
+        <div class="cmd"><pre id="c1">pip install "git+https://github.com/devkancheti4-design/detect-law"</pre><button type="button" data-copy="c1">Copy</button></div>
+        <div class="req">
+          <div><b>Apple silicon</b>Runs on the GPU with MLX</div>
+          <div><b>Windows, Linux, Intel Mac</b>PyTorch, NVIDIA GPU if present, otherwise CPU</div>
+          <div><b>Needs</b>Python 3.10+ and a C compiler</div>
+        </div>
+      </div>
+      <div class="step">
+        <h3>2. Open the app</h3>
+        <div class="cmd"><pre id="c2">detect-law-server</pre><button type="button" data-copy="c2">Copy</button></div>
+        <p>Then open <b>127.0.0.1:8765</b>. Paste text or drop a .txt, .md, .docx or .pdf file, and pick Careful or Official mode.</p>
+      </div>
+      <div class="step">
+        <h3>Or check files from the terminal</h3>
+        <div class="cmd"><pre id="c3">detect-law essay.docx report.pdf        # add --official for the RAID setup</pre><button type="button" data-copy="c3">Copy</button></div>
+      </div>
+      <div class="step">
+        <h3>Or call the API</h3>
+        <div class="cmd"><pre id="c4">curl -s 127.0.0.1:8765/v1/detect -H 'content-type: application/json' -d '{"text": "Paste the essay here"}'</pre><button type="button" data-copy="c4">Copy</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="mcp">
+  <div class="wrap">
+    <p class="eyebrow">MCP server</p>
+    <h2>Give your assistant a detector.</h2>
+    <p class="lead">Claude and other MCP clients can check pasted text or files on your disk. The check still runs locally.</p>
+    <div class="steps">
+      <div class="step">
+        <h3>Claude Code</h3>
+        <div class="cmd"><pre id="m1">claude mcp add detect-law -- uvx --from git+https://github.com/devkancheti4-design/detect-law detect-law-mcp</pre><button type="button" data-copy="m1">Copy</button></div>
+      </div>
+      <div class="step">
+        <h3>Claude Desktop, Cursor and other clients</h3>
+        <div class="cmd"><pre id="m2">{
+  "mcpServers": {
+    "detect-law": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/devkancheti4-design/detect-law", "detect-law-mcp"]
+    }
+  }
+}</pre><button type="button" data-copy="m2">Copy</button></div>
+        <p>Already installed with pip? Use <code>"command": "detect-law-mcp"</code> with no arguments.</p>
+      </div>
+      <div class="step">
+        <h3>Tools</h3>
+        <div class="tools"><code>check_text</code><code>check_file</code><code>about_detect_law</code></div>
+        <p>Every answer carries the verdict, what it means and the evidence, so the assistant never presents it as proof.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="limits">
+  <div class="wrap">
+    <p class="eyebrow">Limits</p>
+    <h2>What it can't do.</h2>
+    <p class="lead">A verdict is statistical evidence, never proof. Use it to decide what a person should read, not to accuse anyone.</p>
+    <div class="limits">
+      <div><b>Short texts from frontier models</b><span>Claude-class writing under about 800 words is often undecided. Long documents are much stronger.</span></div>
+      <div><b>Paraphrasing</b><span>Rewording lowers detection to 68.3% on RAID's paraphrase attack.</span></div>
+      <div><b>AI-polished human writing</b><span>Human text heavily rewritten by an AI tool is flagged as AI. It sees AI wording, not where the ideas came from.</span></div>
+      <div><b>Some genres trip it more</b><span>Book summaries were wrongly flagged 2.5% of the time in careful mode (8.0% in official mode), against 0.56% across all genres.</span></div>
+      <div><b>Language</b><span>English only.</span></div>
+      <div><b>Accuracy ceiling</b><span>Trained commercial classifiers catch more AI text on RAID. Detect Law trades that for zero training, privacy and no cost.</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap fine">
+    <p>Detect Law v7 · detect-law 0.2.0 · results from RAID's evaluation bot, 6 October 2026, merged as <a href="https://github.com/liamdugan/raid/pull/212">liamdugan/raid#212</a>. Not affiliated with the RAID authors.</p>
+    <p>Built with Llama. Uses Llama 3.2 1B and Llama 3.2 1B Instruct under the Llama 3.2 Community License.</p>
+  </div>
+</footer>
+
+<script>
+document.querySelectorAll("button[data-copy]").forEach((b) => {
+  b.addEventListener("click", () => {
+    const pre = document.getElementById(b.dataset.copy);
+    const done = () => { b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy"), 1600); };
+    const select = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Press ⌘C"; };
+    try { navigator.clipboard.writeText(pre.textContent).then(done, select); } catch (e) { select(); }
+  });
+});
+</script>
