@@ -8,3 +8,6 @@ archive/v7/eval_v7
 archive/v7/eval_v7_san*
 .DS_Store
 .claude/
+tests/eval_v7
+tests/smoke_v81
+tests/smoke_v81_san*
