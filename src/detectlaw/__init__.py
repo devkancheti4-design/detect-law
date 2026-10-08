@@ -3,7 +3,7 @@
     from detectlaw import Engine
     print(Engine().detect(open("essay.txt").read())["verdict"])   # ai | no_evidence | undecided
 """
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 
 def __getattr__(name):                     # load the models only when the engine is used

@@ -1,4 +1,4 @@
-"""Local web app + HTTP API for THE DETECT LAW v7.
+"""Local web app + HTTP API for THE DETECT LAW v8.1.
 
     detect-law-server                      then open http://127.0.0.1:8765
     curl -s localhost:8765/v1/detect -H 'content-type: application/json' -d '{"text": "..."}'
@@ -28,7 +28,7 @@ class DetectRequest(BaseModel):
     strip_references: bool = Field(True, description="Ignore everything from a References/Bibliography heading on")
     prose_only: bool = Field(True, description="Skip headings, table cells and equation fragments")
     mode: Literal["careful", "official"] = Field("careful", description="careful: fewer human texts flagged; "
-                                                 "official: the exact setup scored on the RAID benchmark")
+                                                 "official: the exact setup submitted to the RAID benchmark")
 
 
 def _auth(key):

@@ -8,7 +8,7 @@
      ./eval_v7 each a.bin                           every text as its own stream
      ./eval_v7 doc  scan.bin W                      first W windows of a scan file as ONE stream
    BUILD  cc -O2 -Wall -Wextra -Werror -o eval_v7 eval_v7.c -lm                    */
-#include "../src/detectlaw/law/detect_v7.c"
+#include "detect_v7.c"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

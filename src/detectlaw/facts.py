@@ -1,8 +1,8 @@
 """What has been measured, in one place: served by /v1/info and the MCP `about_detect_law` tool."""
 
-RAID = {
+RAID_V7 = {
     "source": "Official RAID test set (672,000 texts), scored by RAID's evaluation bot on 2026-10-06 and listed on "
-              "raid-bench.xyz/leaderboard (github.com/liamdugan/raid/pull/212). Produced in official mode.",
+              "raid-bench.xyz/leaderboard (github.com/liamdugan/raid/pull/212). THE DETECT LAW v7, official mode.",
     "metric": "share of AI texts caught at a fixed false-positive rate on human texts (per-domain thresholds)",
     "all_texts_including_attacks": {"at_5pct_fpr": 77.00, "at_1pct_fpr": 63.87, "auroc": 89.86},
     "no_attacks": {"at_5pct_fpr": 80.08, "at_1pct_fpr": 68.92, "auroc": 90.56},
@@ -10,45 +10,66 @@ RAID = {
     "standing": "Highest no-attack score at 5% FPR among the zero-shot detectors on the RAID leaderboard "
                 "(Binoculars 78.98, GLTR 59.69, LLMDet 33.40). Binoculars is slightly ahead at 1% FPR. "
                 "Trained classifiers score higher (up to 99.98); overall rank 34 of 43.",
-    "per_domain_no_attacks_5pct": {"abstracts": 86.7, "books": 83.7, "news": 82.0, "poetry": 75.3, "recipes": 73.9,
-                                   "reddit": 77.8, "reviews": 78.4, "wiki": 82.9},
-    "per_attack_5pct": {"none": 80.1, "whitespace": 80.1, "zero_width_space": 80.1, "homoglyph": 80.1,
-                        "alternative_spelling": 78.8, "insert_paragraphs": 78.5, "number": 78.4,
-                        "perplexity_misspelling": 78.4, "article_deletion": 74.9, "upper_lower": 74.5,
-                        "synonym": 71.7, "paraphrase": 68.3},
-    "binoculars_per_attack_5pct": {"none": 79.0, "whitespace": 68.7, "zero_width_space": 98.4, "homoglyph": 36.1,
-                                   "alternative_spelling": 77.6, "insert_paragraphs": 70.7, "number": 76.4,
-                                   "perplexity_misspelling": 77.2, "article_deletion": 73.3, "upper_lower": 72.8,
-                                   "synonym": 42.1, "paraphrase": None},
-    "attack_standing": "Ahead of Binoculars on 9 of the 10 attacks both were scored on (average 77.6 vs 69.3); "
-                       "Binoculars has no paraphrase result. Trained classifiers stay near 99% under paraphrase.",
+}
+
+RAID_V81 = {
+    "status": "Submitted to the official RAID leaderboard on 2026-10-07 (github.com/liamdugan/raid/pull/216); "
+              "the official evaluation is pending. Until it lands, the numbers below are our own measurements.",
+    "held_out_raid_train_no_attacks": {
+        "data": "3,200 held-out human + 1,360 AI RAID training texts (34 generator settings), thresholds from human texts",
+        "official_mode": {"at_5pct_fpr": 92.9, "at_1pct_fpr": 88.3},
+        "careful_mode": {"at_5pct_fpr": 92.4, "at_1pct_fpr": 87.6},
+        "v7_same_texts_official_mode": {"at_5pct_fpr": 77.5, "at_1pct_fpr": 65.1}},
+    "raid_evaluator_on_8_domain_sample": {"v8.1": {"at_5pct_fpr": 92.5, "at_1pct_fpr": 86.7},
+                                          "v7": {"at_5pct_fpr": 82.3, "at_1pct_fpr": 72.4}},
+    "attacks_official_mode_5pct": {
+        "data": "11 RAID attacks, 220 AI + 75 human texts each; thresholds from clean human texts (as RAID does)",
+        "v8.1": {"whitespace": 96.4, "homoglyph": 95.5, "zero_width_space": 95.5, "perplexity_misspelling": 95.5,
+                 "number": 93.2, "insert_paragraphs": 92.7, "alternative_spelling": 89.5, "upper_lower": 88.2,
+                 "paraphrase": 85.9, "article_deletion": 84.1, "synonym": 75.0, "mean": 90.1},
+        "v7": {"whitespace": 84.1, "homoglyph": 86.8, "zero_width_space": 84.1, "perplexity_misspelling": 83.6,
+               "number": 77.7, "insert_paragraphs": 80.0, "alternative_spelling": 77.3, "upper_lower": 76.8,
+               "paraphrase": 70.0, "article_deletion": 69.5, "synonym": 62.7, "mean": 77.5},
+        "mean_at_1pct_fpr": {"v8.1": 84.8, "v7": 64.4},
+        "attacked_human_texts_flagged_ai": {"v8.1": "0% on 10 attacks, 1.33% under paraphrase",
+                                            "v7": "0-6.7%, 24% under paraphrase"}},
+    "estimate_official_all_attacks": {
+        "at_5pct_fpr": "about 89.6%", "at_1pct_fpr": "about 81-84%",
+        "how": "share of the 672,000 submitted test scores above human thresholds; the same recipe gives 76.66% for v7 "
+               "against its official 77.00%. The attack test's v7 mean (77.5) is also within 0.5 of v7's official result."},
 }
 
 INFO = {
-    "law": "v7",
-    "what": "An exact 32-bit integer decision rule over two signals from two open 1.24B-parameter models "
-            "(Llama 3.2 1B base and Instruct). No training on labelled AI text (zero-shot).",
+    "law": "v8.1",
+    "what": "An exact 32-bit integer sequential decision law over three per-token signals from two open 1.24B-parameter "
+            "models (Llama 3.2 1B base and Instruct): surprise, contrast and repetition. No training on labelled AI "
+            "text (zero-shot); its constants are measured on human text only.",
     "verdicts": {"ai": "statistical evidence of AI generation: send to human review",
-                 "no_evidence": "an AI-sized effect was ruled out for the generators covered; not proof of human authorship",
-                 "undecided": "not enough evidence, usually a short text; draw no conclusion"},
-    "false_positive_design_bound": "at most 1% of human texts labelled ai, for text like the calibration data "
-                                   "(anytime-valid early stop + end-of-text test)",
-    "modes": {"careful": "default; B = Llama-3.2-1B-Instruct 4-bit, the model the contrast term was calibrated on",
-              "official": "B = Llama-3.2-1B-Instruct full precision, the setup scored on RAID"},
+                 "no_evidence": "every signal ruled out an AI-sized effect for the generators covered; not proof of human authorship",
+                 "undecided": "no significant AI evidence, but not ruled out either (most human texts end here); draw no conclusion"},
+    "false_positive_design_bound": "at most 1% of human texts labelled ai, including texts with their own persistent "
+                                   "style bias (heterogeneity term), for text like the calibration data",
+    "modes": {"careful": "default; B = Llama-3.2-1B-Instruct 4-bit",
+              "official": "B = Llama-3.2-1B-Instruct full precision, the setup submitted to RAID"},
     "app_verdicts_measured": {
-        "data": "2,920 labelled RAID training texts: 1,600 human, 1,320 AI, 8 domains, no attacks",
-        "careful": {"human_flagged_ai": "9/1600 = 0.56% (book summaries 2.5%, reviews 1.0%, reddit 1.0%, others 0%)",
-                    "ai_flagged_ai": "811/1320 = 61.4%"},
-        "official": {"human_flagged_ai": "27/1600 = 1.69% (book summaries 8.0%, reviews 3.0%, reddit 1.5%)",
-                     "ai_flagged_ai": "885/1320 = 67.0%"}},
-    "raid_official": RAID,
-    "speed_measured": {"nvidia_a40": "12,792 tokens/s (0.10 s per 1,000 words)",
-                       "apple_m4_pro_gpu": "about 900 tokens/s (1.4 s per 1,000 words)",
-                       "cpu_4_cores": "about 430 tokens/s (3 s per 1,000 words)"},
-    "cost": "Runs on your own machine: free, no word limit. On a rented A40 GPU, 3 billion words take about "
-            "84 GPU-hours, roughly $40.",
-    "known_limits": ["frontier models (Claude-class) are weakly detected in short texts; long documents are much stronger",
-                     "paraphrasing lowers detection (68.3% on RAID's paraphrase attack)",
+        "data": "3,200 held-out human + 1,360 AI RAID training texts, 8 domains, no attacks",
+        "careful": {"human_flagged_ai": "7/3200 = 0.22% (poetry 1.25%, recipes 0.25%, reddit 0.25%, others 0%); "
+                                        "0% of human texts over 600 tokens",
+                    "ai_flagged_ai": "78.9% (97.3% with repetition penalty, 68.9% without, 86.8% chat models)"},
+        "official": {"human_flagged_ai": "0.22% (poetry 1.25%)", "ai_flagged_ai": "80.8% (chat models 90.1%)"},
+        "v7_for_comparison": {"careful": "human 1.59%, AI 67.9%", "official": "human 2.84%, AI 72.1%"}},
+    "raid_official_v7": RAID_V7,
+    "raid_v8_1": RAID_V81,
+    "parity": "The package's engine reproduces the official A30 run: 120/120 identical verdicts, score correlation 0.99992.",
+    "speed_measured": {"nvidia_a30": "about 9,500 tokens/s (official run, 672,000 texts in 5.6 h)",
+                       "nvidia_t4": "about 2,200 tokens/s per GPU",
+                       "apple_m4_pro_gpu": "about 750 tokens/s (1.7 s per 1,000 words)"},
+    "cost": "Runs on your own machine: free, no word limit. On a rented A30 GPU (about $1/hour), 3 billion words "
+            "(about 3.9 billion tokens) take about 115 GPU-hours, roughly $115.",
+    "known_limits": ["synonym swapping weakens the surprise signal (75.0% caught at 5% FPR, against 90%+ for most attacks)",
+                     "paraphrased AI text is ranked well (85.9%) but often gets undecided instead of ai (36% flagged)",
+                     "AI text sampled from base models without a repetition penalty is the hardest case (22.5% flagged)",
+                     "frontier models (Claude-class) are weakly detected in short texts",
                      "human text heavily rewritten by an AI tool is flagged as AI",
                      "English only",
                      "reference models are Llama 3.2 1B (Built with Llama; Llama 3.2 Community License)"],

@@ -6,12 +6,12 @@ import argparse, json, sys
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(prog="detect-law", description="Explainable AI-text triage (THE DETECT LAW v7).")
+    p = argparse.ArgumentParser(prog="detect-law", description="Explainable AI-text triage (THE DETECT LAW v8.1).")
     p.add_argument("files", nargs="+")
     p.add_argument("--json", action="store_true", help="print the full JSON result")
     p.add_argument("--keep-references", action="store_true", help="also read the reference list")
     p.add_argument("--raw", action="store_true", help="read all text, including headings and table cells")
-    p.add_argument("--official", action="store_true", help="official mode: the exact setup scored on RAID (flags more human text)")
+    p.add_argument("--official", action="store_true", help="official mode: the exact setup submitted to RAID (full-precision model B)")
     a = p.parse_args(argv)
     from .engine import Engine
     from .files import read_text
@@ -28,7 +28,8 @@ def main(argv=None):
         else:
             e = r["evidence"]
             print(f"{f}: {r['verdict'].upper()}  ({r['mode']} mode; read {r['tokens_read']} of {r['tokens_in_text']} tokens; "
-                  f"surprise z {e['surprise_z']}, contrast z {e['contrast_z']}; {r['latency_ms']} ms)\n  {r['meaning']}")
+                  f"z: surprise {e['surprise_z']}, contrast {e['contrast_z']}, repetition {e['repetition_z']}; score {r['score']}; "
+                  f"{r['latency_ms']} ms)\n  {r['meaning']}")
 
 
 if __name__ == "__main__":

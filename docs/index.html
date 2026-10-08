@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Zero-shot AI-text detection that runs on your own computer. 80.08% on the official RAID test, ahead of Binoculars.">
+<meta name="description" content="Zero-shot AI-text detection that runs on your own computer. v7 beat Binoculars on the official RAID test (80.08%); v8.1 averages 90.1% under RAID's 11 attacks in our tests.">
 <meta property="og:title" content="Detect Law">
-<meta property="og:description" content="Zero-shot AI-text detection that runs on your own computer. 80.08% on the official RAID test, ahead of Binoculars.">
+<meta property="og:description" content="Zero-shot AI-text detection that runs on your own computer. v7 beat Binoculars on the official RAID test (80.08%); v8.1 averages 90.1% under RAID's 11 attacks in our tests.">
 <style>[hidden]{display:none!important} img{max-width:100%}</style>
 <title>Detect Law</title>
 <style>
@@ -112,12 +112,19 @@ nav.top .pill { background: var(--accent); color: #fff; opacity: 1; padding: 5px
 .verdict p { margin: 0; font-size: 15px; color: var(--muted); }
 
 /* examples */
-.examples { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; margin-top: 48px; }
+.examples { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-top: 48px; }
 .ex { background: var(--surface); border-radius: 22px; padding: 24px; display: grid; gap: 12px; align-content: start; min-width: 0; }
 .ex .src { font-size: 13px; color: var(--muted); }
 .ex blockquote { margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink); border-left: 2px solid var(--line); padding-left: 12px; }
 .ex .res { font: 600 19px/1.2 var(--display); }
 .ex.ai .res { color: var(--bad); } .ex.ok .res { color: var(--good); }
+.ex.un .res { color: var(--warn); }
+.status { margin-top: 22px; border: 1px solid var(--line); border-radius: 18px; padding: 20px 22px; display: grid; gap: 8px; }
+.status .tag { justify-self: start; font: 600 12px/1 var(--sans); letter-spacing: .04em; text-transform: uppercase; color: var(--warn); border: 1px solid currentColor; border-radius: 980px; padding: 6px 10px; }
+.status p { margin: 0; color: var(--muted); font-size: 15px; }
+.status b { color: var(--ink); }
+td.us-n { font-weight: 600; color: var(--ours); }
+.cards3.four { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 .ex dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 14px; }
 .ex dt { color: var(--muted); } .ex dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
 
@@ -169,6 +176,7 @@ footer p { margin: 0 0 6px; }
 <nav class="top" aria-label="Sections">
   <div class="wrap">
     <a class="brand" href="#top">Detect Law</a>
+    <a href="#v81">v8.1</a>
     <a href="#results">Results</a>
     <a href="#how">How it works</a>
     <a href="#free">Free</a>
@@ -179,24 +187,58 @@ footer p { margin: 0 0 6px; }
 </nav>
 
 <header class="hero wrap" id="top">
-  <p class="eyebrow">THE DETECT LAW v7 · zero-shot AI-text detection</p>
-  <h1>Beat Binoculars.<br><span>On the official RAID test.</span></h1>
-  <p class="lead">Two small open models and one integer law. It runs on your own computer, and it is free.</p>
+  <p class="eyebrow">THE DETECT LAW v8.1 · zero-shot AI-text detection</p>
+  <h1>Beat Binoculars on RAID.<br><span>v8.1 raises the bar.</span></h1>
+  <p class="lead">Two small open models, three signals and one integer law. It runs on your own computer, and it is free.</p>
   <div class="ctas">
     <a class="btn fill" href="#install">Install</a>
-    <a class="btn" href="#results">See the results</a>
+    <a class="btn" href="#v81">What's new in v8.1</a>
   </div>
   <div class="duel" role="group" aria-label="Official RAID score comparison">
-    <div class="side us"><span class="big">80.08%</span><span class="who">Detect Law</span></div>
+    <div class="side us"><span class="big">80.08%</span><span class="who">Detect Law v7</span></div>
     <span class="vs">vs</span>
     <div class="side them"><span class="big">78.98%</span><span class="who">Binoculars</span></div>
   </div>
-  <p class="fine">Share of AI-written texts caught while flagging only 5% of human texts, on RAID's 672,000-text test set without adversarial attacks. Scored by RAID's own evaluation bot on 6 October 2026 and listed on the <a href="https://raid-bench.xyz/leaderboard">RAID leaderboard</a>. Official mode.</p>
+  <p class="fine">Share of AI-written texts caught while flagging only 5% of human texts, on RAID's 672,000-text test set without adversarial attacks. Scored by RAID's own evaluation bot on 6 October 2026 and listed on the <a href="https://raid-bench.xyz/leaderboard">RAID leaderboard</a>. v8.1 has been submitted; its official score is pending.</p>
 </header>
 
-<section class="band" id="results">
+<section class="band" id="v81">
   <div class="wrap">
-    <p class="eyebrow">Official results</p>
+    <p class="eyebrow">New in v8.1</p>
+    <h2>Catches more. Flags fewer people.</h2>
+    <p class="lead">A third signal for repetition, and a law that allows for each writer's own steady style. On the same held-out RAID texts, v8.1 catches far more AI text and wrongly flags 7 to 13 times fewer human texts than v7.</p>
+    <div class="tiles">
+      <div class="tile"><span class="v num">92.9%</span><span class="k">AI text caught at 5% false positives on held-out RAID texts, no attacks. v7: 77.5%</span></div>
+      <div class="tile"><span class="v num">90.1%</span><span class="k">Average over RAID's 11 adversarial attacks, same metric. v7: 77.5%</span></div>
+      <div class="tile"><span class="v num">0.22%</span><span class="k">Human texts the app flagged as AI, in both modes. v7: 1.59% careful, 2.84% official</span></div>
+    </div>
+    <div class="chart" aria-label="v7 and v8.1 compared">
+      <h3>v7 and v8.1 on the same texts</h3>
+      <span class="fine">Our measurements on RAID's labelled training data: 3,200 held-out human and 1,360 AI texts across 34 generator settings, and 3,270 attacked texts. Thresholds come from human texts, the way RAID's evaluator sets them. Official mode unless noted.</span>
+      <div class="scroll"><table>
+        <thead><tr><th>Measure</th><th class="n">v7</th><th class="n">v8.1</th></tr></thead>
+        <tbody>
+          <tr><td>AI caught at 5% false positives, no attacks</td><td class="n">77.5%</td><td class="n us-n">92.9%</td></tr>
+          <tr><td>AI caught at 1% false positives, no attacks</td><td class="n">65.1%</td><td class="n us-n">88.3%</td></tr>
+          <tr><td>RAID's own evaluator, 8-domain sample (5%)</td><td class="n">82.3%</td><td class="n us-n">92.5%</td></tr>
+          <tr><td>Average over 11 attacks at 5% false positives</td><td class="n">77.5%</td><td class="n us-n">90.1%</td></tr>
+          <tr><td>Average over 11 attacks at 1% false positives</td><td class="n">64.4%</td><td class="n us-n">84.8%</td></tr>
+          <tr><td>App verdict: human texts flagged as AI (careful)</td><td class="n">1.59%</td><td class="n us-n">0.22%</td></tr>
+          <tr><td>App verdict: AI texts flagged as AI (careful)</td><td class="n">67.9%</td><td class="n us-n">78.9%</td></tr>
+          <tr><td>Paraphrased human texts flagged as AI</td><td class="n">24.0%</td><td class="n us-n">1.3%</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="status">
+      <span class="tag">Official evaluation pending</span>
+      <p>v8.1's scores for all 672,000 RAID test texts were submitted on 7 October 2026 (<a href="https://github.com/liamdugan/raid/pull/216">liamdugan/raid#216</a>). From those submitted scores we estimate about <b>89.6%</b> on all texts including attacks, against v7's official 77.00%. Applied to v7's submission, the same method gives 76.66%, within 0.4 points of its official score. Until RAID's bot scores v8.1, the official number is v7's.</p>
+    </div>
+  </div>
+</section>
+
+<section id="results">
+  <div class="wrap">
+    <p class="eyebrow">Official results · v7</p>
     <h2>The best zero-shot score on RAID.</h2>
     <p class="lead">RAID is the largest public benchmark for AI-text detectors: 11 generators, 8 domains, 4 sampling settings and 11 attacks. No detector sees the test answers.</p>
     <div class="tiles">
@@ -208,7 +250,7 @@ footer p { margin: 0 0 6px; }
     <div class="chart" aria-label="Zero-shot detectors on the RAID leaderboard">
       <h3>Zero-shot detectors on the RAID leaderboard</h3>
       <span class="fine">Same metric: AI text caught at 5% false positives, no attacks.</span>
-      <div class="row us"><span class="lbl">Detect Law</span><div class="track"><i style="width:80.08%"></i></div><span class="val">80.08</span></div>
+      <div class="row us"><span class="lbl">Detect Law v7</span><div class="track"><i style="width:80.08%"></i></div><span class="val">80.08</span></div>
       <div class="row"><span class="lbl">Binoculars</span><div class="track"><i style="width:78.98%"></i></div><span class="val">78.98</span></div>
       <div class="row"><span class="lbl">GLTR</span><div class="track"><i style="width:59.69%"></i></div><span class="val">59.69</span></div>
       <div class="row"><span class="lbl">LLMDet</span><div class="track"><i style="width:33.40%"></i></div><span class="val">33.40</span></div>
@@ -216,20 +258,20 @@ footer p { margin: 0 0 6px; }
     </div>
 
     <ul class="notes">
-      <li>At the stricter 1% false-positive setting, Binoculars leads: 69.54% against 68.92%.</li>
-      <li>Fast-DetectGPT submitted only 6 of the 8 domains. Detect Law scores higher in 5 of those 6.</li>
-      <li>Trained classifiers score higher, up to 99.98%. Across all 43 ranked detectors, Detect Law places 34th.</li>
+      <li>At the stricter 1% false-positive setting, Binoculars leads v7: 69.54% against 68.92%. v8.1 measured 88.3% at 1% on held-out texts; its official figure is pending.</li>
+      <li>Fast-DetectGPT submitted only 6 of the 8 domains. v7 scores higher in 5 of those 6.</li>
+      <li>Trained classifiers score higher, up to 99.98%. Across all 43 ranked detectors, v7 places 34th.</li>
     </ul>
   </div>
 </section>
 
-<section id="domains">
+<section class="band" id="domains">
   <div class="wrap">
-    <p class="eyebrow">Domain by domain</p>
+    <p class="eyebrow">Domain by domain · v7 official</p>
     <h2>Ahead in 5 of 8 domains.</h2>
     <p class="lead">Strongest on scientific abstracts, Wikipedia and news. Binoculars stays ahead on poetry, Reddit and recipes.</p>
     <div class="chart" aria-label="Per-domain comparison with Binoculars">
-      <div class="legend"><span><b style="background:var(--ours)"></b>Detect Law</span><span><b style="background:var(--them)"></b>Binoculars</span><span>AI text caught at 5% false positives, no attacks</span></div>
+      <div class="legend"><span><b style="background:var(--ours)"></b>Detect Law v7</span><span><b style="background:var(--them)"></b>Binoculars</span><span>AI text caught at 5% false positives, no attacks</span></div>
       <div class="row"><span class="lbl">Abstracts</span><div class="pair"><div class="track ours"><i style="width:86.7%"></i></div><div class="track"><i style="width:76.0%"></i></div></div><span class="val">86.7<br><span class="fine">76.0</span></span></div>
       <div class="row"><span class="lbl">Wikipedia</span><div class="pair"><div class="track ours"><i style="width:82.9%"></i></div><div class="track"><i style="width:76.5%"></i></div></div><span class="val">82.9<br><span class="fine">76.5</span></span></div>
       <div class="row"><span class="lbl">News</span><div class="pair"><div class="track ours"><i style="width:82.0%"></i></div><div class="track"><i style="width:80.7%"></i></div></div><span class="val">82.0<br><span class="fine">80.7</span></span></div>
@@ -243,109 +285,111 @@ footer p { margin: 0 0 6px; }
   </div>
 </section>
 
-<section class="band" id="attacks">
+<section id="attacks">
   <div class="wrap">
-    <p class="eyebrow">Under attack</p>
-    <h2>The zero-shot detector that holds up.</h2>
-    <p class="lead">Ahead of Binoculars on 9 of the 10 attacks both were tested on, by up to 44 points. Hidden characters and look-alike letters are cleaned away before scoring.</p>
-    <div class="tiles">
-      <div class="tile"><span class="v num">77.6%</span><span class="k">Detect Law, average over the 10 shared attacks</span></div>
-      <div class="tile"><span class="v num" style="color:var(--muted)">69.3%</span><span class="k">Binoculars, same 10 attacks</span></div>
-      <div class="tile"><span class="v num">68.3%</span><span class="k">Detect Law under paraphrase, the hardest attack. GLTR 43.0%, LLMDet 26.1%</span></div>
-    </div>
-    <div class="chart" aria-label="Detection by attack, compared with Binoculars">
-      <div class="legend"><span><b style="background:var(--ours)"></b>Detect Law</span><span><b style="background:var(--them)"></b>Binoculars</span><span>AI text caught at 5% false positives, all domains</span></div>
-      <div class="row"><span class="lbl">Homoglyphs</span><div class="pair"><div class="track ours"><i style="width:80.1%"></i></div><div class="track"><i style="width:36.1%"></i></div></div><span class="val">80.1<br><span class="fine">36.1</span></span></div>
-      <div class="row"><span class="lbl">Synonyms</span><div class="pair"><div class="track ours"><i style="width:71.7%"></i></div><div class="track"><i style="width:42.1%"></i></div></div><span class="val">71.7<br><span class="fine">42.1</span></span></div>
-      <div class="row"><span class="lbl">Whitespace</span><div class="pair"><div class="track ours"><i style="width:80.1%"></i></div><div class="track"><i style="width:68.7%"></i></div></div><span class="val">80.1<br><span class="fine">68.7</span></span></div>
-      <div class="row"><span class="lbl">Paragraph breaks</span><div class="pair"><div class="track ours"><i style="width:78.5%"></i></div><div class="track"><i style="width:70.7%"></i></div></div><span class="val">78.5<br><span class="fine">70.7</span></span></div>
-      <div class="row"><span class="lbl">Number swaps</span><div class="pair"><div class="track ours"><i style="width:78.4%"></i></div><div class="track"><i style="width:76.4%"></i></div></div><span class="val">78.4<br><span class="fine">76.4</span></span></div>
-      <div class="row"><span class="lbl">Upper/lower case</span><div class="pair"><div class="track ours"><i style="width:74.5%"></i></div><div class="track"><i style="width:72.8%"></i></div></div><span class="val">74.5<br><span class="fine">72.8</span></span></div>
-      <div class="row"><span class="lbl">Article deletion</span><div class="pair"><div class="track ours"><i style="width:74.9%"></i></div><div class="track"><i style="width:73.3%"></i></div></div><span class="val">74.9<br><span class="fine">73.3</span></span></div>
-      <div class="row"><span class="lbl">Alt. spelling</span><div class="pair"><div class="track ours"><i style="width:78.8%"></i></div><div class="track"><i style="width:77.6%"></i></div></div><span class="val">78.8<br><span class="fine">77.6</span></span></div>
-      <div class="row"><span class="lbl">Misspellings</span><div class="pair"><div class="track ours"><i style="width:78.4%"></i></div><div class="track"><i style="width:77.2%"></i></div></div><span class="val">78.4<br><span class="fine">77.2</span></span></div>
-      <div class="row"><span class="lbl">Paraphrase</span><div class="pair"><div class="track ours"><i style="width:68.3%"></i></div><div class="track"></div></div><span class="val">68.3<br><span class="fine">–</span></span></div>
-      <div class="row"><span class="lbl">Zero-width spaces</span><div class="pair"><div class="track ours"><i style="width:80.1%"></i></div><div class="track"><i style="width:98.4%"></i></div></div><span class="val">80.1<br><span class="fine">98.4</span></span></div>
+    <p class="eyebrow">Under attack · v8.1</p>
+    <h2>Better on all 11 attacks.</h2>
+    <p class="lead">On the same 3,270 attacked texts, v8.1 beats v7 on every one of RAID's attacks, by 9 to 16 points. It almost never mistakes an attacked human text for AI: 0% on 10 attacks and 1.3% under paraphrase, where v7 flagged 24%.</p>
+    <div class="chart" aria-label="Detection by attack, v8.1 compared with v7">
+      <div class="legend"><span><b style="background:var(--ours)"></b>v8.1</span><span><b style="background:var(--them)"></b>v7</span><span>AI text caught at 5% false positives, official mode, our test</span></div>
+      <div class="row"><span class="lbl">Whitespace</span><div class="pair"><div class="track ours"><i style="width:96.4%"></i></div><div class="track"><i style="width:84.1%"></i></div></div><span class="val">96.4<br><span class="fine">84.1</span></span></div>
+      <div class="row"><span class="lbl">Homoglyphs</span><div class="pair"><div class="track ours"><i style="width:95.5%"></i></div><div class="track"><i style="width:86.8%"></i></div></div><span class="val">95.5<br><span class="fine">86.8</span></span></div>
+      <div class="row"><span class="lbl">Zero-width spaces</span><div class="pair"><div class="track ours"><i style="width:95.5%"></i></div><div class="track"><i style="width:84.1%"></i></div></div><span class="val">95.5<br><span class="fine">84.1</span></span></div>
+      <div class="row"><span class="lbl">Misspellings</span><div class="pair"><div class="track ours"><i style="width:95.5%"></i></div><div class="track"><i style="width:83.6%"></i></div></div><span class="val">95.5<br><span class="fine">83.6</span></span></div>
+      <div class="row"><span class="lbl">Number swaps</span><div class="pair"><div class="track ours"><i style="width:93.2%"></i></div><div class="track"><i style="width:77.7%"></i></div></div><span class="val">93.2<br><span class="fine">77.7</span></span></div>
+      <div class="row"><span class="lbl">Paragraph breaks</span><div class="pair"><div class="track ours"><i style="width:92.7%"></i></div><div class="track"><i style="width:80.0%"></i></div></div><span class="val">92.7<br><span class="fine">80.0</span></span></div>
+      <div class="row"><span class="lbl">Alt. spelling</span><div class="pair"><div class="track ours"><i style="width:89.5%"></i></div><div class="track"><i style="width:77.3%"></i></div></div><span class="val">89.5<br><span class="fine">77.3</span></span></div>
+      <div class="row"><span class="lbl">Upper/lower case</span><div class="pair"><div class="track ours"><i style="width:88.2%"></i></div><div class="track"><i style="width:76.8%"></i></div></div><span class="val">88.2<br><span class="fine">76.8</span></span></div>
+      <div class="row"><span class="lbl">Paraphrase</span><div class="pair"><div class="track ours"><i style="width:85.9%"></i></div><div class="track"><i style="width:70.0%"></i></div></div><span class="val">85.9<br><span class="fine">70.0</span></span></div>
+      <div class="row"><span class="lbl">Article deletion</span><div class="pair"><div class="track ours"><i style="width:84.1%"></i></div><div class="track"><i style="width:69.5%"></i></div></div><span class="val">84.1<br><span class="fine">69.5</span></span></div>
+      <div class="row"><span class="lbl">Synonyms</span><div class="pair"><div class="track ours"><i style="width:75.0%"></i></div><div class="track"><i style="width:62.7%"></i></div></div><span class="val">75.0<br><span class="fine">62.7</span></span></div>
       <div class="axis" aria-hidden="true"><span></span><span><span>0</span><span>50</span><span>100%</span></span><span></span></div>
     </div>
     <ul class="notes">
-      <li>Binoculars did not submit paraphrase results. Zero-width spaces push its scores toward AI, which raises its catch rate on that attack; Detect Law strips them first.</li>
-      <li>Trained classifiers that learn from RAID-style attacks stay near 99% under paraphrase. Detect Law ranks 33rd of 41 there.</li>
+      <li>220 AI and 75 human texts per attack from RAID's labelled data. On v7's official attack results it was already ahead of Binoculars on 9 of the 10 attacks both were scored on (77.6% against 69.3% on average).</li>
+      <li>Hidden characters and look-alike letters are cleaned away before scoring. Trained classifiers that learn from RAID-style attacks stay near 99% under paraphrase.</li>
     </ul>
   </div>
 </section>
 
-<section id="how">
+<section class="band" id="how">
   <div class="wrap">
     <p class="eyebrow">How it works</p>
-    <h2>Two signals. One integer law.</h2>
-    <p class="lead">No classifier is trained on labelled AI text. The decision is about 150 lines of 32-bit integer C, tested exact and overflow-free under sanitizers.</p>
-    <div class="cards3">
+    <h2>Three signals. One integer law.</h2>
+    <p class="lead">No classifier is trained on labelled AI text. The decision is about 325 lines of 32-bit integer C, and its constants are measured on human writing only.</p>
+    <div class="cards3 four">
       <div class="card"><span class="glyph">SURPRISE</span><h3>How predictable is the wording?</h3><p>A base model (Llama 3.2 1B) measures how much cheaper each word is than it expects. Sampled AI text runs cheap.</p></div>
       <div class="card"><span class="glyph">CONTRAST</span><h3>Chosen like a chat model?</h3><p>A chat-tuned twin (Llama 3.2 1B Instruct) checks whether each word is picked the way assistants pick. Domain vocabulary cancels out.</p></div>
-      <div class="card"><span class="glyph">LAW</span><h3>Stops when it's sure.</h3><p>An anytime-valid test reads 200 tokens at a time and stops as soon as the evidence is decisive. In careful mode it wrongly flagged 0.56% of 1,600 human texts.</p></div>
+      <div class="card"><span class="glyph">REPETITION · NEW</span><h3>Fewer repeats than expected?</h3><p>AI samplers with a repetition penalty avoid reusing words. The law compares each passage's repeats with what the base model predicts.</p></div>
+      <div class="card"><span class="glyph">LAW</span><h3>Stops when it's sure. Allows for style.</h3><p>An anytime-valid test reads 200 tokens at a time and stops when the evidence is decisive. It allows for each writer's steady style, so a distinctive human voice no longer looks like AI.</p></div>
     </div>
     <div class="verdicts">
       <div class="verdict ai"><span class="w">AI evidence</span><p>Statistical evidence of AI generation. Send it to a person for review.</p></div>
-      <div class="verdict ok"><span class="w">No evidence</span><p>An AI-sized effect was ruled out. Not proof of human authorship.</p></div>
-      <div class="verdict un"><span class="w">Undecided</span><p>Too little text to say. Draw no conclusion.</p></div>
+      <div class="verdict ok"><span class="w">No evidence</span><p>Every signal ruled out an AI-sized effect. Not proof of human authorship.</p></div>
+      <div class="verdict un"><span class="w">Undecided</span><p>No significant AI evidence, but not ruled out either. Most human texts end here. Draw no conclusion.</p></div>
     </div>
 
     <div class="chart" aria-label="Careful and official modes">
       <h3>Two modes. You choose.</h3>
-      <span class="fine">The app's own verdicts on 2,920 labelled RAID texts (1,600 human, 1,320 AI, 8 domains).</span>
+      <span class="fine">The app's own verdicts on 3,200 held-out human and 1,360 AI RAID texts, 8 domains, no attacks.</span>
       <div class="scroll"><table>
-        <thead><tr><th>Mode</th><th class="n">Human texts flagged as AI</th><th class="n">AI texts flagged as AI</th><th>Use it for</th></tr></thead>
+        <thead><tr><th>Mode</th><th class="n">Human texts flagged as AI</th><th class="n">AI texts flagged as AI</th><th>Model B</th></tr></thead>
         <tbody>
-          <tr class="us"><td>Careful (default)</td><td class="n">0.56%</td><td class="n">61.4%</td><td>Checking people's work</td></tr>
-          <tr><td>Official</td><td class="n">1.69%</td><td class="n">67.0%</td><td>The exact setup behind the RAID score</td></tr>
+          <tr class="us"><td>Careful (default)</td><td class="n">0.22%</td><td class="n">78.9%</td><td>Llama 3.2 1B Instruct, 4-bit</td></tr>
+          <tr><td>Official</td><td class="n">0.22%</td><td class="n">80.8%</td><td>Full precision, the setup submitted to RAID</td></tr>
         </tbody>
       </table></div>
-      <span class="fine">Hardest genre: book summaries, flagged 2.5% in careful mode and 8.0% in official mode. The rest are undecided or cleared; short texts are often undecided.</span>
+      <span class="fine">Hardest genre: poetry, flagged 1.25%. No human text longer than 600 tokens was flagged. Most human texts end undecided rather than cleared. AI texts sampled with a repetition penalty are flagged 97.3% of the time.</span>
     </div>
 
     <div class="examples">
       <div class="ex ai">
+        <span class="src">RAID · abstracts · MPT, repetition penalty</span>
+        <blockquote>In this work, we propose BoundLoss to address boundary loss in semantic segmentation tasks with remote sensing imagery (RSI)…</blockquote>
+        <span class="res">AI evidence</span>
+        <dl><dt>Decided after</dt><dd>70 of 467 tokens</dd><dt>Surprise z</dt><dd>−1.75</dd><dt>Contrast z</dt><dd>−0.25</dd><dt>Repetition z</dt><dd>+6.81</dd><dt>Time</dt><dd>0.24 s</dd></dl>
+      </div>
+      <div class="ex ai">
         <span class="src">RAID · news · ChatGPT</span>
         <blockquote>Shares in drinks company Pernod Ricard have risen after reports suggested it could be considering a takeover bid for rival firm Jose Cuervo…</blockquote>
         <span class="res">AI evidence</span>
-        <dl><dt>Decided after</dt><dd>173 of 451 tokens</dd><dt>Surprise z</dt><dd>+2.91</dd><dt>Contrast z</dt><dd>+5.53</dd><dt>Time on a MacBook Pro</dt><dd>0.24 s</dd></dl>
+        <dl><dt>Read</dt><dd>451 of 451 tokens</dd><dt>Surprise z</dt><dd>+2.38</dd><dt>Contrast z</dt><dd>+3.38</dd><dt>Repetition z</dt><dd>+1.38</dd><dt>Time</dt><dd>0.51 s</dd></dl>
       </div>
-      <div class="ex ai">
+      <div class="ex un">
         <span class="src">RAID · Wikipedia · GPT-4</span>
         <blockquote>Arnold Johannes Hyacinthus Mühren (born 2 June 1951) is a Dutch former professional footballer who played as a midfielder…</blockquote>
-        <span class="res">AI evidence</span>
-        <dl><dt>Read</dt><dd>491 of 491 tokens</dd><dt>Surprise z</dt><dd>+2.09</dd><dt>Contrast z</dt><dd>+3.95</dd><dt>Time on a MacBook Pro</dt><dd>0.56 s</dd></dl>
+        <span class="res">Undecided</span>
+        <dl><dt>Read</dt><dd>491 of 491 tokens</dd><dt>Surprise z</dt><dd>+1.56</dd><dt>Contrast z</dt><dd>+2.06</dd><dt>Repetition z</dt><dd>−0.94</dd><dt>Time</dt><dd>0.56 s</dd></dl>
       </div>
-      <div class="ex ok">
+      <div class="ex un">
         <span class="src">RAID · Wikipedia · human</span>
         <blockquote>Josephine Maria Logan, known as Lillie (sometimes Lily) (October 2, 1843 — 1923) was an American painter and instructor, active for many years in Richmond, Virginia…</blockquote>
-        <span class="res">No evidence of AI</span>
-        <dl><dt>Read</dt><dd>302 of 302 tokens</dd><dt>Surprise z</dt><dd>−2.35</dd><dt>Contrast z</dt><dd>+0.82</dd><dt>Time on a MacBook Pro</dt><dd>0.53 s</dd></dl>
+        <span class="res">Undecided</span>
+        <dl><dt>Read</dt><dd>302 of 302 tokens</dd><dt>Surprise z</dt><dd>−1.94</dd><dt>Contrast z</dt><dd>+0.12</dd><dt>Repetition z</dt><dd>+1.06</dd><dt>Time</dt><dd>0.38 s</dd></dl>
       </div>
     </div>
-    <p class="fine" style="margin-top:14px">Real output of detect-law 0.2.0 (official mode) on texts with a typical score for their group, taken from RAID's labelled training data.</p>
+    <p class="fine" style="margin-top:14px">Real output of detect-law 0.3.0 (official mode) on a MacBook Pro, on texts from RAID's labelled training data. The first was caught by the new repetition signal alone. The GPT-4 text shows the limit: v8.1 sees AI-leaning evidence, but not enough to call it from 491 tokens.</p>
   </div>
 </section>
 
-<section class="band" id="free">
+<section id="free">
   <div class="wrap">
     <p class="eyebrow">Free and private</p>
     <h2>Check 3 billion words. Pay nothing.</h2>
     <p class="lead">It runs where your text already is. No account, no meter, no upload. Nothing you check ever leaves your computer.</p>
     <div class="split">
       <div class="panel">
-        <span class="huge num">84 h</span>
-        <p style="margin:0;color:var(--muted)">of one rented A40 GPU checks 3 billion words, about $40. A Mac with Apple silicon checks about 1.8 billion words a month on its own.</p>
+        <span class="huge num">115 h</span>
+        <p style="margin:0;color:var(--muted)">of one rented A30 GPU checks 3 billion words, about $115. A Mac with Apple silicon checks about 1.5 billion words a month on its own.</p>
         <div class="scroll"><table>
           <thead><tr><th>Measured on</th><th class="n">per 1,000 words</th></tr></thead>
           <tbody>
-            <tr><td>NVIDIA A40 GPU</td><td class="n">0.10 s</td></tr>
-            <tr><td>MacBook Pro, M4 Pro</td><td class="n">1.4 s</td></tr>
-            <tr><td>CPU only, 4 cores (M4 Pro)</td><td class="n">3.0 s</td></tr>
+            <tr><td>NVIDIA A30 GPU, batched (the official RAID run)</td><td class="n">0.14 s</td></tr>
+            <tr><td>NVIDIA T4 GPU</td><td class="n">0.6 s</td></tr>
+            <tr><td>MacBook Pro, M4 Pro</td><td class="n">1.7 s</td></tr>
           </tbody>
         </table></div>
-        <span class="fine">Full reading of both models over every token. Long documents often finish sooner because the law stops early.</span>
+        <span class="fine">v8.1 runs both models over every token it reads, so it is slower per word than v7. It still stops early once the evidence is decisive.</span>
       </div>
       <div class="panel">
         <h3>What 1,000 words cost elsewhere</h3>
@@ -366,7 +410,7 @@ footer p { margin: 0 0 6px; }
   </div>
 </section>
 
-<section id="install">
+<section class="band" id="install">
   <div class="wrap">
     <p class="eyebrow">Install</p>
     <h2>One command. Then it's yours.</h2>
@@ -398,7 +442,7 @@ footer p { margin: 0 0 6px; }
   </div>
 </section>
 
-<section class="band" id="mcp">
+<section id="mcp">
   <div class="wrap">
     <p class="eyebrow">MCP server</p>
     <h2>Give your assistant a detector.</h2>
@@ -429,16 +473,18 @@ footer p { margin: 0 0 6px; }
   </div>
 </section>
 
-<section id="limits">
+<section class="band" id="limits">
   <div class="wrap">
     <p class="eyebrow">Limits</p>
     <h2>What it can't do.</h2>
     <p class="lead">A verdict is statistical evidence, never proof. Use it to decide what a person should read, not to accuse anyone.</p>
     <div class="limits">
+      <div><b>Synonym swapping</b><span>Replacing words with synonyms hides the surprise signal: 75.0% caught at 5% false positives, against 84 to 96% under the other attacks.</span></div>
+      <div><b>Paraphrasing</b><span>Paraphrased AI text is still ranked well (85.9%), but the app's verdict usually stays undecided: 36% flagged.</span></div>
+      <div><b>Base-model sampling</b><span>AI text sampled from base models without a repetition penalty is the hardest case: 22.5% flagged.</span></div>
       <div><b>Short texts from frontier models</b><span>Claude-class writing under about 800 words is often undecided. Long documents are much stronger.</span></div>
-      <div><b>Paraphrasing</b><span>Rewording lowers detection to 68.3% on RAID's paraphrase attack.</span></div>
       <div><b>AI-polished human writing</b><span>Human text heavily rewritten by an AI tool is flagged as AI. It sees AI wording, not where the ideas came from.</span></div>
-      <div><b>Some genres trip it more</b><span>Book summaries were wrongly flagged 2.5% of the time in careful mode (8.0% in official mode), against 0.56% across all genres.</span></div>
+      <div><b>Some genres trip it more</b><span>Poems were wrongly flagged 1.25% of the time, against 0.22% across all genres.</span></div>
       <div><b>Language</b><span>English only.</span></div>
       <div><b>Accuracy ceiling</b><span>Trained commercial classifiers catch more AI text on RAID. Detect Law trades that for zero training, privacy and no cost.</span></div>
     </div>
@@ -447,7 +493,7 @@ footer p { margin: 0 0 6px; }
 
 <footer>
   <div class="wrap fine">
-    <p>Detect Law v7 · detect-law 0.2.0 · results from RAID's evaluation bot, 6 October 2026, merged as <a href="https://github.com/liamdugan/raid/pull/212">liamdugan/raid#212</a>. Not affiliated with the RAID authors.</p>
+    <p>Detect Law v8.1 · detect-law 0.3.0 · v7's official results from RAID's evaluation bot, 6 October 2026, merged as <a href="https://github.com/liamdugan/raid/pull/212">liamdugan/raid#212</a>. v8.1 submitted as <a href="https://github.com/liamdugan/raid/pull/216">liamdugan/raid#216</a>; official evaluation pending. Not affiliated with the RAID authors.</p>
     <p>Built with Llama. Uses Llama 3.2 1B and Llama 3.2 1B Instruct under the Llama 3.2 Community License.</p>
   </div>
 </footer>

@@ -52,7 +52,7 @@ button:focus-visible, .file:focus-within { outline: 3px solid color-mix(in srgb,
 .verdict .word { font: 600 40px/1.1 var(--display); letter-spacing: -0.01em; }
 .v-ai .word { color: var(--ai); } .v-no_evidence .word { color: var(--ok); } .v-undecided .word { color: var(--wait); }
 .meaning { margin: 0; color: var(--ink); max-width: 64ch; }
-.meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
 .meter { background: var(--field); border-radius: 14px; padding: 14px 16px; display: grid; gap: 8px; min-width: 0; }
 .meter .k { font-size: 13px; color: var(--muted); letter-spacing: .02em; }
 .meter .v { font: 600 24px/1 var(--display); font-variant-numeric: tabular-nums; }
@@ -99,7 +99,7 @@ footer a { color: var(--accent); text-decoration: none; }
 
   <footer>
     <span>A verdict is statistical evidence, not proof. Send <b>AI</b> verdicts to a person for review.</span>
-    <span>THE DETECT LAW v7 · two open Llama 3.2 1B models · <a href="/docs">API</a> · <a href="/v1/info">Measured results</a></span>
+    <span>THE DETECT LAW v8.1 · two open Llama 3.2 1B models · <a href="/docs">API</a> · <a href="/v1/info">Measured results</a></span>
   </footer>
 </main>
 <script>
@@ -107,8 +107,8 @@ const $ = (id) => document.getElementById(id);
 const text = $("text"), go = $("go"), out = $("result"), count = $("count");
 const WORDS = { ai: "AI evidence", no_evidence: "No evidence of AI", undecided: "Undecided" };
 const HELP = {
-  careful: "Careful mode flags fewer human texts by mistake. Best for checking people's work.",
-  official: "Official mode is the exact setup scored on the RAID benchmark. It catches a little more AI text and wrongly flags more human text.",
+  careful: "Careful mode uses a compact 4-bit model B. It wrongly flagged 0.22% of human texts in tests.",
+  official: "Official mode is the exact setup submitted to the RAID benchmark (full-precision model B). Same 0.22% human error in tests, slightly more AI caught.",
 };
 const mode = () => document.querySelector('input[name="mode"]:checked').value;
 function setHelp() { $("modehelp").textContent = HELP[mode()]; }
@@ -141,6 +141,7 @@ function show(r) {
     <div class="meters">
       ${meter("Surprise · how predictable the wording is", e.surprise_z, "z-score")}
       ${meter("Contrast · chosen like a chat model", e.contrast_z, "z-score")}
+      ${meter("Repetition · fewer repeats than expected", e.repetition_z, "z-score")}
     </div>
     <div class="facts">${r.mode === "official" ? "Official" : "Careful"} mode · read ${r.tokens_read.toLocaleString()} of ${r.tokens_in_text.toLocaleString()} tokens${r.decided_early ? " · stopped early, the evidence was decisive" : ""} · ${(r.latency_ms / 1000).toFixed(1)} s</div>
     <details><summary>Full result</summary><pre>${esc(JSON.stringify(r, null, 2))}</pre></details>`;

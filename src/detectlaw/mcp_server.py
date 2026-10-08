@@ -39,7 +39,8 @@ def _get():
 
 HOW_TO_READ = ("ai = statistical evidence of AI generation (some human texts get it too): send to human review, "
                "never use as proof. no_evidence = an AI-sized effect was ruled out, not proof of human authorship. "
-               "undecided = too little text to say; draw no conclusion.")
+               "undecided = no significant AI evidence but not ruled out either (most human texts end here); "
+               "draw no conclusion.")
 
 server = _Server(
     "detect-law",
@@ -53,8 +54,8 @@ server = _Server(
 def check_text(text: str, mode: str = "careful", strip_references: bool = True) -> dict:
     """Check whether a piece of English prose (an essay, article, review, answer) shows statistical evidence of
     being written by an AI model. Returns verdict (ai | no_evidence | undecided), what it means, and the evidence.
-    Works best on 200+ words. mode: "careful" (default, fewer human texts flagged) or "official" (the exact setup
-    scored on the RAID benchmark). Set strip_references=False to also read a reference list."""
+    Works best on 200+ words. mode: "careful" (default, 4-bit model B) or "official" (full-precision model B, the
+    exact setup submitted to the RAID benchmark). Set strip_references=False to also read a reference list."""
     if not text or not text.strip():
         raise ToolError("text is empty: pass the text to check")
     if mode not in ("careful", "official"):
@@ -85,7 +86,7 @@ def check_file(path: str, mode: str = "careful", strip_references: bool = True) 
 
 @server.tool()
 def about_detect_law() -> dict:
-    """How the detector works, its official RAID benchmark results, speed, cost and known limits."""
+    """How the detector works (THE DETECT LAW v8.1), its RAID benchmark results, speed, cost and known limits."""
     return INFO
 
 

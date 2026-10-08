@@ -1,15 +1,15 @@
-"""Detection engine: long-form text -> THE DETECT LAW v7 verdict, streamed and cost-aware.
+"""Detection engine: long-form text -> THE DETECT LAW v8.1 verdict, streamed and cost-aware.
 
-Text is split into 200-token windows (the length the law was calibrated on). Model A
-(Llama-3.2-1B) scores every window the law reads; model B (Llama-3.2-1B-Instruct) runs only
-while the law asks for it (law_step returns 3). Reading stops as soon as the law stops.
-The decision itself is the compiled int32 law (liblaw_v7), called through ctypes.
+Text is split into 200-token windows (the length the law was calibrated on), each scored from a fresh BOS.
+Per token, model A (Llama-3.2-1B) gives surprisal, entropy and variance; model B (Llama-3.2-1B-Instruct) gives
+the contrast against A; and the window itself gives the repetition signal (was this token already used here, and
+how much probability did A put on already-used tokens). The decision is the compiled int32 law (law/detect_v81.c,
+the exact file used for the official RAID run), called through ctypes. Reading stops as soon as the law stops.
 
-Two modes, chosen per check:
-  careful   (default) B = Llama-3.2-1B-Instruct in 4-bit, the model the law's contrast term was calibrated on.
-            Fewer human texts flagged (RAID book summaries 2.5%, reviews 1.0%).
-  official  B = Llama-3.2-1B-Instruct in full precision, the configuration scored on the official RAID test set
-            (80.08% at 5% FPR without attacks). More human texts flagged (book summaries 8.0%, reviews 3.0%).
+Two modes, chosen per check (each has its own measured constants, compiled into its own library):
+  careful   (default) B = Llama-3.2-1B-Instruct in 4-bit.
+  official  B = Llama-3.2-1B-Instruct in full precision, the configuration submitted to the official RAID test.
+On 3,200 held-out human RAID texts both modes flagged 0.22% as AI (poetry 1.25%, other genres 0-0.25%).
 Backends: MLX on Apple Silicon, PyTorch everywhere else (NVIDIA GPU if present, otherwise CPU); the 4-bit
 weights are unpacked exactly for PyTorch. Pick one with DETECT_LAW_BACKEND=mlx|torch.
 """
@@ -18,7 +18,7 @@ import numpy as np
 from .textnorm import normalize
 from ._build import library_path
 
-LAW_VERSION = "v7"
+LAW_VERSION = "v8.1"
 A_REPO = "unsloth/Llama-3.2-1B"
 MODES = {"careful": "mlx-community/Llama-3.2-1B-Instruct-4bit", "official": "unsloth/Llama-3.2-1B-Instruct"}
 DEFAULT_MODE = "careful"
@@ -26,22 +26,37 @@ WINDOW, LN2, INT32_MIN = 200, float(np.log(2.0)), -2**31
 RANGES = [(-(1 << 21), 0), (-(1 << 21), 0), (0, 1 << 22), (-(1 << 21), 1 << 21), (-(1 << 21), 0), (0, 1 << 24)]
 VERDICT = {1: "ai", 0: "no_evidence", 2: "undecided"}
 MEANING = {
-    "ai": "Statistical evidence of AI generation. Some human texts get this verdict too (about 1-2% in tests, more in "
-          "some genres), so it is evidence, not proof: route to human review, never to automatic penalties.",
-    "no_evidence": "Both signals ruled out an AI-sized effect for the generators this filter covers. "
+    "ai": "Statistical evidence of AI generation. A few human texts get this verdict too (0.22% of human RAID texts "
+          "in tests, 1.25% of poems), so it is evidence, not proof: route to human review, never to automatic penalties.",
+    "no_evidence": "Every signal ruled out an AI-sized effect for the generators this filter covers. "
                    "Not proof of human authorship: frontier models (e.g. Claude) and paraphrased text can evade it.",
-    "undecided": "Not enough evidence either way, usually because the text is short. No conclusion should be drawn.",
+    "undecided": "No significant evidence of AI was found, but an AI-sized effect could not be ruled out either. "
+                 "Most human texts end here (98% in tests), and so do some AI texts, especially short or paraphrased "
+                 "ones. Draw no conclusion.",
 }
+ARMS = ("surprise", "contrast", "repetition")
 
 
 class LawState(ctypes.Structure):
-    _fields_ = [("w", ctypes.c_int32 * 16)]
+    _fields_ = [("w", ctypes.c_int32 * 24)]
 
 
-_lib = ctypes.CDLL(library_path())
-_lib.law_init.argtypes = [ctypes.POINTER(LawState)]; _lib.law_init.restype = None
-_lib.law_step.argtypes = [ctypes.POINTER(LawState)] + [ctypes.c_int32] * 6; _lib.law_step.restype = ctypes.c_int32
-_lib.law_final.argtypes = [ctypes.POINTER(LawState)]; _lib.law_final.restype = ctypes.c_int32
+_P32 = ctypes.POINTER(ctypes.c_int32)
+_LIBS = {}
+
+
+def _law(mode):
+    """The compiled law for one mode (its own measured constants)."""
+    if mode not in _LIBS:
+        lib = ctypes.CDLL(library_path(mode))
+        lib.api_init.argtypes = [ctypes.POINTER(LawState)]; lib.api_init.restype = None
+        lib.api_block.argtypes = [ctypes.POINTER(LawState)] + [_P32] * 8 + [ctypes.c_int32]
+        lib.api_block.restype = ctypes.c_int32
+        for fn in ("api_final", "api_score", "api_tokens"):
+            getattr(lib, fn).argtypes = [ctypes.POINTER(LawState)]; getattr(lib, fn).restype = ctypes.c_int32
+        lib.api_z.argtypes = [ctypes.POINTER(LawState), _P32]; lib.api_z.restype = None
+        _LIBS[mode] = lib
+    return _LIBS[mode]
 
 
 def prose(text, strip_references=True):
@@ -63,7 +78,24 @@ def prose(text, strip_references=True):
 
 
 def _q(a, lo, hi):
-    return np.clip(np.rint(np.asarray(a, np.float32) * np.float32(65536.0)), lo, hi).astype(np.int32)
+    """Fixed point 2^-16, exactly as the law's calibration and the official run quantised (float64 rounding)."""
+    return np.ascontiguousarray(np.clip(np.rint(np.asarray(a, np.float64) * 65536.0), lo, hi), dtype=np.int32)
+
+
+def _repeats(ids):
+    """R[i] = 1 if token i already appeared earlier in the window; the mask marks, for each position, which
+    distinct tokens have already appeared (so Q = A's probability mass on already-used tokens)."""
+    first, R = {}, np.zeros(len(ids), np.int32)
+    for i, t in enumerate(ids):
+        if t in first:
+            R[i] = 1
+        else:
+            first[t] = i
+    U = sorted(first)
+    mask = np.zeros((len(ids), len(U)), np.float32)
+    for j, t in enumerate(U):
+        mask[first[t] + 1:, j] = 1.0
+    return R, U, mask
 
 
 def _local(repo):
@@ -155,6 +187,12 @@ class _MLX:
         mx.eval(D, K, VC)
         return [np.array(D), np.array(K), np.array(VC)]
 
+    def q(self, ctx, U, mask):
+        mx = self.mx
+        Q = mx.sum(mx.take(ctx[1], mx.array(U), axis=1) * mx.array(mask), -1)
+        mx.eval(Q)
+        return np.array(Q)
+
 
 class _Torch:
     name = "torch"
@@ -209,6 +247,11 @@ class _Torch:
         D = dl.gather(-1, t)[:, 0]; K = (pa * dl).sum(-1); VC = (pa * (dl - K[:, None]) ** 2).sum(-1)
         return [x.cpu().numpy() for x in (D, K, VC)]
 
+    def q(self, ctx, U, mask):
+        torch = self.torch
+        pa = ctx[1]
+        return (pa[:, torch.tensor(U, device=self.device)] * torch.tensor(mask, device=self.device)).sum(-1).cpu().numpy()
+
 
 class Engine:
     def __init__(self, mode=None, a_repo=A_REPO, backend=None, b_repo=None):
@@ -222,7 +265,7 @@ class Engine:
         self.tok = self.be.tok
         self.B = {}
         self.lock = threading.Lock()                       # one forward pass at a time
-        self._b(self.mode)
+        self._b(self.mode); _law(self.mode)
         self.models = {"A": a_repo, "modes": self.repos, "default_mode": self.mode, "backend": self.be.name, "device": self.be.device}
 
     def _b(self, mode):
@@ -230,56 +273,58 @@ class Engine:
             self.B[mode] = self.be.load_b(self.repos[mode])
         return self.B[mode]
 
-    def detect(self, text, strip_references=True, prose_only=True, mode=None):
+    def detect(self, text, strip_references=True, prose_only=True, mode=None, max_tokens=None):
         mode = mode or self.mode
         if mode not in MODES:
             raise ValueError(f"mode must be one of {sorted(MODES)}")
         t0 = time.time()
         text = normalize(text)                             # undo zero-width / homoglyph / whitespace tricks
         body = prose(text, strip_references) if prose_only else ""
-        if not body:                                       # nothing survived the prose filter: use the raw text
-            body = re.sub(r"\s+", " ", text).strip()
+        if not body:                                       # raw text, paragraph breaks kept, as calibrated
+            body = text
         ids = self.tok.encode(body, add_special_tokens=False)
+        if max_tokens:                                     # the official RAID run read the first 1,024 tokens
+            ids = ids[:max_tokens]
         wins = [ids[i:i + WINDOW] for i in range(0, len(ids), WINDOW)]
         if len(wins) > 1 and len(wins[-1]) < 100:          # merge a short tail, as calibrated
             tail = wins.pop()
             wins[-1] = wins[-1] + tail
-        st = LawState(); _lib.law_init(ctypes.byref(st))
-        want_b, act, read, b_tok = True, None, 0, 0
-        sA = sV = sC = sVC = 0.0
+        lib, st = _law(mode), LawState()
+        lib.api_init(ctypes.byref(st))
+        act = None
         with self.lock:
             B = self._b(mode)
             for w in wins:
                 ctx, (L, E, V) = self.be.a(w)
-                b = self.be.b(w, ctx, B) if want_b else None
-                qa = [_q(a, lo, hi) for a, (lo, hi) in zip((L, E, V), RANGES[:3])]
-                qb = [_q(x, lo, hi) for x, (lo, hi) in zip(b, RANGES[3:])] if b is not None else None
-                for i in range(len(w)):
-                    use_b = want_b and qb is not None
-                    d, k, vc = (int(qb[0][i]), int(qb[1][i]), int(qb[2][i])) if use_b else (INT32_MIN,) * 3
-                    r = _lib.law_step(ctypes.byref(st), int(qa[0][i]), int(qa[1][i]), int(qa[2][i]), d, k, vc)
-                    read += 1; sA += float(L[i] - E[i]); sV += float(V[i])
-                    if use_b:
-                        b_tok += 1; sC += float(b[0][i] - b[1][i] - 90 / 2048 * b[2][i]); sVC += float(b[2][i])
-                    if r in (0, 1):
-                        act = r; break
-                    want_b = (r == 3)
-                if act is not None:
+                D, K, VC = self.be.b(w, ctx, B)
+                R, U, mask = _repeats(w)
+                Q = self.be.q(ctx, U, mask)
+                cols = [_q(x, lo, hi) for x, (lo, hi) in zip((L, E, V, D, K, VC), RANGES)]
+                cols += [np.ascontiguousarray(R, dtype=np.int32),
+                         np.ascontiguousarray(np.clip(np.rint(np.asarray(Q, np.float64) * 65536.0), 0, 65536), dtype=np.int32)]
+                r = lib.api_block(ctypes.byref(st), *[c.ctypes.data_as(_P32) for c in cols], len(w))
+                if r in (0, 1):
+                    act = r
                     break
         if act is None:
-            act = _lib.law_final(ctypes.byref(st))
+            act = lib.api_final(ctypes.byref(st))
+        read = lib.api_tokens(ctypes.byref(st))
+        zs = (ctypes.c_int32 * 3)(); lib.api_z(ctypes.byref(st), zs)
+        z = {a: (None if v == INT32_MIN else round(v / 16, 2)) for a, v in zip(ARMS, zs)}
+        score = lib.api_score(ctypes.byref(st))
         v = VERDICT[act]
         return {
             "verdict": v, "meaning": MEANING[v], "mode": mode, "law": LAW_VERSION,
             "tokens_in_text": len(ids), "tokens_read": read, "decided_early": read < len(ids),
-            "model_b_tokens": b_tok,
+            "score": round(float(np.sqrt(score / 256.0)), 4),
             "evidence": {
-                "surprise_bits_per_token": round(sA / max(read, 1), 4),
-                "surprise_z": round(sA / np.sqrt(sV), 3) if sV > 0 else None,
-                "contrast_bits_per_token": round(sC / max(b_tok, 1), 4) if b_tok else None,
-                "contrast_z": round(sC / np.sqrt(sVC), 3) if sVC > 0 else None,
-                "note": "Positive surprise = cheaper than the reference model expects (AI-like); positive contrast = "
-                        "chosen the way a chat-tuned model chooses. Human text averages about 0 on both.",
+                "surprise_z": z["surprise"], "contrast_z": z["contrast"], "repetition_z": z["repetition"],
+                "law_score": score,
+                "note": "Each z compares the text with human writing (about 0 for human text; positive = AI-like). "
+                        "Surprise: wording more predictable than the reference model expects. Contrast: words chosen "
+                        "the way a chat-tuned model chooses them. Repetition: fewer repeated words than the reference "
+                        "model predicts (typical of AI sampling with a repetition penalty). score = sqrt(law_score/256), "
+                        "the number submitted to RAID; None = not enough text for that signal yet.",
             },
             "latency_ms": round((time.time() - t0) * 1000),
         }

@@ -3,7 +3,8 @@ __pycache__/
 *.egg-info/
 build/
 dist/
-src/detectlaw/law/liblaw_v7.*
-tests/eval_v7
-tests/eval_v7_san*
+src/detectlaw/law/liblaw_v*
+archive/v7/eval_v7
+archive/v7/eval_v7_san*
 .DS_Store
+.claude/

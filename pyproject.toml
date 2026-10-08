@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "detect-law"
-version = "0.2.0"
-description = "Zero-shot AI-text detection that runs on your own computer: an exact int32 decision law over two small open models. Web app, CLI, HTTP API and MCP server."
+version = "0.3.0"
+description = "Zero-shot AI-text detection that runs on your own computer: THE DETECT LAW v8.1, an exact int32 decision law over two small open models. Web app, CLI, HTTP API and MCP server."
 readme = "README.md"
 requires-python = ">=3.10"
 # License: not chosen yet. Until a license is added, all rights are reserved.
@@ -32,4 +32,4 @@ detect-law-mcp = "detectlaw.mcp_server:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-detectlaw = ["law/detect_v7.c", "web/index.html"]
+detectlaw = ["law/detect_v81.c", "law/api_v81.c", "web/index.html"]

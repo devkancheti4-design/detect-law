@@ -1,15 +1,36 @@
-# Model card: detect-law v0.2.0 (THE DETECT LAW v7)
+# Model card: detect-law v0.3.0 (THE DETECT LAW v8.1)
 
 ## What it is
 
-An exact 32-bit integer decision rule over two signals computed by two open 1.24B-parameter models
-(Meta Llama 3.2: `Llama-3.2-1B` base and `Llama-3.2-1B-Instruct`):
+An exact 32-bit integer sequential decision law (`src/detectlaw/law/detect_v81.c`) over three per-token signals from
+two open 1.24B-parameter models (Meta Llama 3.2: `Llama-3.2-1B` base as A, `Llama-3.2-1B-Instruct` as B):
 
-- **Surprise:** how much more predictable each word is than model A expects. Cooler or truncated sampling makes text "cheaper".
-- **Contrast:** how much more the chat-tuned model B likes each chosen word than A does, centred for the measured human bias. This signal ignores domain vocabulary.
+- **Surprise:** how much more predictable each token is than A expects (clip(L − E, ±8 bits), weighted by A's variance).
+- **Contrast:** how much more B likes each chosen token than A does (clip(D − K, ±6 bits)). Domain vocabulary cancels out.
+- **Repetition (new in v8.1):** whether the token was already used in the window, against the probability A put on
+  already-used tokens (x = q − R). AI sampling with a repetition penalty repeats less than A predicts.
 
-Early stopping uses Ville's inequality with a Bennett correction (anytime-valid). An end-of-text z-test handles short texts.
-"No evidence" requires both signals to rule out an AI-sized effect; anything else is `undecided`.
+**The null allows for style.** Each human text may carry its own persistent bias (spread κ across texts), so the
+variance of each arm is ρ·W + κ²·W² rather than ρ·W; a distinctive human voice stops looking like ever-growing
+evidence. The end-of-text test uses that heterogeneity z. The anytime-valid early-stop lines (Ville's inequality)
+spend part of their share on the bias, so each line's slope carries c + κ·z(α_b).
+
+**Error budget:** 1% in total across the three arms (surprise 0.45%, contrast 0.40%, repetition 0.15%), each split
+between the end test, the bias charge and the martingale lines (80/10/10). **Verdicts:** `ai` as soon as any arm
+crosses its line, or at the end test; `no_evidence` only if every arm rules out an AI-sized effect; otherwise
+`undecided`. **Score:** law_score = Σ max(z, 0)², evidence toward AI only; the package reports √(law_score/256).
+
+The constants are measured on human text only (no training on AI text): per arm, the mean c, the within-text
+variance ratio ρ and the between-text spread κ, on 3,200 human RAID training texts (400 per domain).
+
+| Arm | c (pooled) | ρ | κ |
+|---|---|---|---|
+| Surprise | +0.00953 | 0.811 | 0.01402 |
+| Contrast, careful mode | +0.05293 | 1.000 | 0.04038 |
+| Contrast, official mode | +0.06516 | 1.000 | 0.04408 |
+| Repetition | −0.07434 | 1.013 | 0.12042 |
+
+The generator accepted pooled centring for all arms: worst-domain design limit 1.48% (recipes), within the 1.5% target.
 
 ## Intended use
 
@@ -18,16 +39,68 @@ Not for automatic penalties, grading or accusations. A verdict is statistical ev
 
 ## Modes
 
-| Mode | Model B | Use it for |
+| Mode | Model B | Notes |
 |---|---|---|
-| `careful` (default) | Llama-3.2-1B-Instruct, 4-bit (`mlx-community/Llama-3.2-1B-Instruct-4bit`; unpacked exactly on PyTorch) | Checking people's work. The law's contrast term was calibrated on this model. |
-| `official` | Llama-3.2-1B-Instruct, full precision (`unsloth/Llama-3.2-1B-Instruct`) | Reproducing the RAID score. |
+| `careful` (default) | `mlx-community/Llama-3.2-1B-Instruct-4bit` (unpacked exactly on PyTorch) | Smaller download |
+| `official` | `unsloth/Llama-3.2-1B-Instruct`, full precision | The setup submitted to RAID |
+
+Each mode is compiled with its own measured contrast constants.
+
+## Measured results (this project's harness on RAID's labelled training data, English, no attacks unless stated)
+
+Held-out half: 3,200 human texts (400 per domain) and 1,360 AI texts (40 per generator setting, 34 settings).
+
+**The app's own verdicts:**
+
+| Mode | Human labelled `ai` | AI labelled `ai` | Rep. penalty | No penalty | Base-model sampling | Chat models |
+|---|---|---|---|---|---|---|
+| careful | 0.22% (poetry 1.25%, recipes 0.25%, reddit 0.25%, others 0%) | 78.9% | 97.3% | 68.9% | 22.5% | 86.8% |
+| official | 0.22% (poetry 1.25%) | 80.8% | 97.3% | 71.8% | 23.0% | 90.1% |
+| v7, careful | 1.59% (poetry 5.25%) | 67.9% | 46.7% | 79.4% | 41.5% | 83.6% |
+
+No human text of 600 tokens or more (n = 386) was labelled `ai`. Human verdicts in careful mode: 3,133 `undecided`,
+60 `no_evidence`, 7 `ai`.
+
+**RAID's metric** (per-domain thresholds from human texts):
+
+| Mode | 5% FPR | 1% FPR | v7 at 5% / 1% |
+|---|---|---|---|
+| careful | 92.4% | 87.6% | 77.1% / 65.9% |
+| official | 92.9% | 88.3% | 77.5% / 65.1% |
+
+RAID's own evaluator on a second, 8-domain sample (1,600 human, 1,320 AI): v8.1 92.5% / 86.7%, v7 82.3% / 72.4%.
+
+**Under RAID's 11 attacks** (official mode; 220 AI and 75 human texts per attack; thresholds from clean human texts):
+
+| Attack | 5% FPR, v7 → v8.1 | 1% FPR, v7 → v8.1 | Attacked human labelled `ai`, v7 → v8.1 |
+|---|---|---|---|
+| whitespace | 84.1 → 96.4 | 70.5 → 90.9 | 1.00% → 0% |
+| homoglyph | 86.8 → 95.5 | 73.6 → 92.7 | 1.33% → 0% |
+| zero-width space | 84.1 → 95.5 | 76.8 → 92.3 | 4.00% → 0% |
+| misspelling | 83.6 → 95.5 | 71.4 → 90.0 | 1.33% → 0% |
+| number | 77.7 → 93.2 | 67.3 → 90.0 | 0% → 0% |
+| insert paragraphs | 80.0 → 92.7 | 72.3 → 90.9 | 4.00% → 0% |
+| alternative spelling | 77.3 → 89.5 | 64.1 → 84.1 | 4.00% → 0% |
+| upper/lower case | 76.8 → 88.2 | 63.6 → 81.4 | 2.67% → 0% |
+| paraphrase | 70.0 → 85.9 | 49.5 → 71.8 | 24.00% → 1.33% |
+| article deletion | 69.5 → 84.1 | 55.9 → 79.5 | 2.67% → 0% |
+| synonym | 62.7 → 75.0 | 43.6 → 68.6 | 6.67% → 0% |
+| **mean** | **77.5 → 90.1** | **64.4 → 84.8** | |
+
+**Parity:** the package's engine (MLX on an M4 Pro) and the official A30 run (PyTorch fp16) gave identical verdicts
+on 120 of 120 RAID texts; score correlation 0.99992. Careful mode on 480 held-out human texts flagged 1 (0.21%, a poem).
+
+**Code checks** (`make test`): both modes compile under `-Wall -Wextra -Werror -std=c99`; extreme and random streams
+of 2^18 tokens run clean under UBSan and ASan; a stop latches; law_score stays within 3·2^18.
 
 ## Official benchmark: RAID
 
-RAID test set, 672,000 texts (11 generators, 8 domains, 4 sampling settings, 11 attacks), scored by RAID's
-evaluation bot on 2026-10-06 and listed on the [RAID leaderboard](https://raid-bench.xyz/leaderboard), in official mode.
-Metric: share of AI texts caught at a fixed false-positive rate, thresholds set per domain from human texts.
+**v8.1:** predictions for all 672,000 test texts submitted on 2026-10-07
+([liamdugan/raid#216](https://github.com/liamdugan/raid/pull/216)); the official evaluation is pending. Estimate from
+the submitted scores: about 89.6% on all texts including attacks at 5% FPR, about 81–84% at 1% (the same method gives
+76.66% for v7's submission, against its official 77.00%).
+
+**v7** (official, scored by RAID's bot on 2026-10-06, [liamdugan/raid#212](https://github.com/liamdugan/raid/pull/212)):
 
 | | 5% FPR | 1% FPR | AUROC |
 |---|---|---|---|
@@ -35,70 +108,17 @@ Metric: share of AI texts caught at a fixed false-positive rate, thresholds set 
 | All texts incl. attacks | 77.00% | 63.87% | 89.86 |
 | Binoculars (official), no attacks | 78.98% | 69.54% | – |
 
-Highest no-attack score at 5% FPR among the zero-shot detectors on the leaderboard; Binoculars leads at 1% FPR.
-Overall rank 34 of 43. Ahead of Binoculars on 9 of the 10 attacks both were scored on.
-
-## The app's own verdicts on RAID texts
-
-RAID's metric tunes a threshold per domain; the app instead uses the law's fixed rule. On 2,920 labelled texts from
-RAID's training data (1,600 human, 1,320 AI, 8 domains, no attacks):
-
-| Mode | Human texts labelled `ai` | AI texts labelled `ai` | AI texts `undecided` |
-|---|---|---|---|
-| careful | 9 / 1,600 = 0.56% | 811 / 1,320 = 61.4% | 32.2% |
-| official | 27 / 1,600 = 1.69% | 885 / 1,320 = 67.0% | 28.0% |
-
-By genre, careful mode flagged book summaries 2.5% (5/200), reviews 1.0%, Reddit 1.0%, and abstracts, news, poetry,
-recipes and Wikipedia 0%. Official mode flagged book summaries 8.0% and reviews 3.0%: the full-precision model has a
-different human bias on the contrast signal than the 4-bit model the law was calibrated on.
-
-The measurements below were made with the 4-bit model, i.e. careful mode.
-
-## Measured results (English; all numbers from this project's harness, not an independent benchmark)
-
-**False positives** (human text labelled `ai`; the design bound is ≤ 1%):
-
-| Human text | ~200 tokens | Long streams (to 4,000–20,000 tokens) |
-|---|---|---|
-| IMDB reviews (1,000) | 0.3% | 0–0.27% |
-| GitHub issues (80) | 0% | 0% |
-| Pre-LLM medical abstracts (200) | 0% | 0.4% |
-**With 3% human-style typos** (swap, drop, double or neighbouring-key letter in 3% of words):
-
-| Human text | Clean, ~200 tokens | Typos, ~200 tokens (95% upper bound) | Clean, long streams | Typos, long streams (95% upper bound) |
-|---|---|---|---|---|
-| IMDB reviews | 3/1000 | 4/1000 (1.02%) | 2/2000 | 0/2000 (0.18%) |
-| GitHub issues | 0/80 | 0/80 (4.5%) | 0/2000 | 0/2000 (0.18%) |
-| Medical abstracts | 0/200 | 0/200 (1.8%) | 6/2000 | 0/2000 (0.18%) |
-
-Typos add surprise, which pushes text toward the human side, so they do not raise false positives.
-
-**Detection at ~200 tokens:** Llama-3.2-3B chat 100%, Qwen2.5-7B chat 84% (reviews) / 93% (medical), SmolLM2 92%,
-Llama base model with top-p 0.9 45%, **Claude 10% (reviews) / 0% (medical abstracts) / 5 of 10 (assistant-style answers)**.
-
-**Long documents:** 100% for every generator tested, including Claude (median 776 tokens for reviews, about 2,000 for medical abstracts).
-
-**Attacks** (documents of ~1,000–1,300 tokens; paraphraser Qwen2.5-7B kept 47–69% of the words):
-
-| | Clean | Typos 3% | Light paraphrase | Paraphrase + typos |
-|---|---|---|---|---|
-| Claude reviews | 4/4 | 3/4 | 4/4 | 4/4 |
-| Claude chat answers | 2/2 | 2/2 | 2/2 | 2/2 |
-| Claude medical abstracts | 1/4 | 0/4 | 1/4 | 1/4 |
-| Qwen-7B / Llama-3B chat | 10/10 | 10/10 | 10/10 | 10/10 |
-| Human reviews | 0/10 | 0/10 | 8/10 | 9/10 |
-| Human medical | 0/5 | 0/5 | 2/5 | 2/5 |
-
-**Code-level proofs** (`make test`): exact integer helper; 0 precision violations against the real-number rule in
-3,975,668 comparisons; no overflow on 2^20-token worst-case streams; clean under UBSan and ASan.
-
-**Cost:** 0.2–3.6 s per document on an Apple M4 Pro laptop. The law itself costs 0.00014 ms per token; the model passes
-cost 0.61 ms (A) and 0.56 ms (B) per token, and B runs only while needed.
-
 ## Limits
 
-- **Frontier models in short texts:** Claude-class text is mostly `undecided` below ~800–2,000 tokens.
-- **AI-polished human work is flagged:** human text rewritten by an AI paraphraser (more than half its words changed) is detected as AI. The filter sees AI wording, not the origin of the ideas.
-- **Narrow testing:** English only; calibrated on reviews, GitHub issues and medical abstracts. Other genres need a human baseline.
-- **Accuracy ceiling:** trained classifiers score higher on RAID (up to 99.98% at 5% FPR). Weakest RAID attacks: paraphrase 68.3%, synonyms 71.7%.
-- **Platform:** Apple Silicon (MLX) and PyTorch (NVIDIA GPU or CPU). The two backends agree to within 0.04 in z on tested texts, with identical verdicts.
+- **Synonym swapping** hides the surprise signal (75.0% caught at 5% FPR; the contrast signal carries it).
+- **Paraphrase:** ranked well (85.9% at 5% FPR) but the app's verdict usually stays `undecided` (36% labelled `ai`);
+  paraphrasers add repeats, which pushes the repetition signal the wrong way.
+- **Base-model sampling without a repetition penalty** is the hardest case (22.5% labelled `ai`).
+- **Frontier models in short texts:** Claude-class text is mostly `undecided` below roughly 800–2,000 tokens.
+- **AI-polished human work is flagged:** the filter sees AI wording, not the origin of the ideas.
+- **More `undecided`:** v8.1 is more cautious per text than v7; most human texts end `undecided`, not `no_evidence`.
+- **Narrow testing:** English only; calibrated on RAID's 8 domains. Other genres need a human baseline.
+- **Accuracy ceiling:** trained classifiers score higher on RAID (up to 99.98% at 5% FPR).
+
+The v7 model card, with its earlier measurements (IMDB, GitHub issues, medical abstracts, Claude documents), is in
+[archive/v7/MODEL_CARD_v7.md](archive/v7/MODEL_CARD_v7.md).

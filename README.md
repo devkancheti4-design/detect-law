@@ -1,15 +1,30 @@
 # detect-law
 
-Zero-shot AI-text detection that runs on your own computer. An exact 32-bit integer decision law
-over two small open models returns `ai`, `no_evidence` or `undecided`, flags at most 1% of human
-texts by design (measured: 0.56% of 1,600 human RAID texts in careful mode), and stops reading as soon
-as the evidence is decisive.
+Zero-shot AI-text detection that runs on your own computer. THE DETECT LAW v8.1, an exact 32-bit integer
+sequential decision law over three per-token signals from two small open models (surprise, contrast and
+repetition), returns `ai`, `no_evidence` or `undecided`. It flags at most 1% of human texts by design, allowing
+for each writer's own steady style; measured, it flagged 0.22% of 3,200 held-out human RAID texts. It stops
+reading as soon as the evidence is decisive.
 
-**Official RAID result** (672,000-text test set, scored by RAID's evaluation bot on 2026-10-06,
-[submission #212](https://github.com/liamdugan/raid/pull/212), official mode): **80.08%** of AI text caught at
-5% false positives without attacks, ahead of Binoculars (78.98%), the best zero-shot score on the
-[RAID leaderboard](https://raid-bench.xyz/leaderboard) (rank 34 of 43 overall). 77.00% on all texts including 11 adversarial attacks. Binoculars leads at 1% false positives
-(69.54% vs 68.92%), and trained classifiers score higher (up to 99.98%).
+**v8.1, our measurements** (RAID's labelled training data; thresholds from human texts, as RAID's evaluator sets them):
+
+| | v7 | v8.1 |
+|---|---|---|
+| AI caught at 5% false positives, held-out texts, no attacks | 77.5% | **92.9%** |
+| Average over RAID's 11 attacks, 5% false positives | 77.5% | **90.1%** |
+| Human texts flagged `ai` by the app (careful mode) | 1.59% | **0.22%** |
+
+v8.1's scores for the full RAID test set were submitted on 2026-10-07
+([liamdugan/raid#216](https://github.com/liamdugan/raid/pull/216)); the official evaluation is pending. From the
+submitted scores we estimate about 89.6% on all 672,000 texts including attacks (the same method gives 76.66% for
+v7's submission, whose official result is 77.00%).
+
+**Official RAID result, v7** (scored by RAID's evaluation bot on 2026-10-06,
+[liamdugan/raid#212](https://github.com/liamdugan/raid/pull/212)): **80.08%** of AI text caught at 5% false
+positives without attacks, ahead of Binoculars (78.98%), the best zero-shot score on the
+[RAID leaderboard](https://raid-bench.xyz/leaderboard) (rank 34 of 43 overall); 77.00% on all texts including 11
+adversarial attacks. Binoculars leads v7 at 1% false positives (69.54% vs 68.92%), and trained classifiers score
+higher (up to 99.98%).
 
 **Read [MODEL_CARD.md](MODEL_CARD.md) before using it on real people's work.** The verdict is
 evidence, not proof.
@@ -78,18 +93,22 @@ print(r["verdict"], r["evidence"])
 | Verdict | Meaning | What to do |
 |---|---|---|
 | `ai` | Statistical evidence of AI generation | Human review. Never automatic penalties. |
-| `no_evidence` | An AI-sized effect was ruled out for the generators covered | Nothing. Not proof of human authorship. |
-| `undecided` | Not enough evidence, usually a short text | Nothing. |
+| `no_evidence` | Every signal ruled out an AI-sized effect for the generators covered | Nothing. Not proof of human authorship. |
+| `undecided` | No significant AI evidence, but not ruled out either. Most human texts end here (98% in tests) | Nothing. Draw no conclusion. |
+
+Each result also carries `score` (√(law_score/256), the number submitted to RAID) and the z of each signal:
+`surprise_z`, `contrast_z`, `repetition_z` (about 0 for human text; positive means AI-like).
 
 ## Modes
 
 | Mode | Model B | Human texts flagged `ai` | AI texts flagged `ai` |
 |---|---|---|---|
-| `careful` (default) | Llama-3.2-1B-Instruct, 4-bit: the model the law was calibrated on | 0.56% | 61.4% |
-| `official` | Llama-3.2-1B-Instruct, full precision: the setup scored on RAID | 1.69% | 67.0% |
+| `careful` (default) | Llama-3.2-1B-Instruct, 4-bit | 0.22% | 78.9% |
+| `official` | Llama-3.2-1B-Instruct, full precision: the setup submitted to RAID | 0.22% | 80.8% |
 
-Measured on 2,920 labelled RAID texts (1,600 human, 1,320 AI, 8 domains). Book summaries are the hardest genre:
-2.5% flagged in careful mode, 8.0% in official mode. Pick a mode with `--official` (CLI), `"mode": "official"`
+Measured on 3,200 held-out human and 1,360 AI RAID texts (8 domains, 34 generator settings, no attacks). Each mode
+has its own measured constants. Poetry is the hardest genre (1.25% flagged); no human text over 600 tokens was
+flagged. Pick a mode with `--official` (CLI), `"mode": "official"`
 (API and MCP), the switch in the web app, or `DETECT_LAW_MODE`.
 
 Choose the backend with `DETECT_LAW_BACKEND=mlx|torch` and the PyTorch device with `DETECT_LAW_DEVICE` (e.g. `cuda:1`).
@@ -98,22 +117,28 @@ Choose the backend with `DETECT_LAW_BACKEND=mlx|torch` and the PyTorch device wi
 
 | Hardware | Per 1,000 words |
 |---|---|
-| NVIDIA A40 | 0.10 s |
-| Apple M4 Pro (MLX) | 1.4 s |
-| CPU only, 4 cores | 3.0 s |
+| NVIDIA A30, batched (the official RAID run: 672,000 texts in 5.6 h) | 0.14 s |
+| NVIDIA T4, batched | 0.6 s |
+| Apple M4 Pro (MLX) | 1.7 s |
 
-3 billion words take about 84 hours of one A40, roughly $40 if rented. On your own machine it is free.
+v8.1 runs both models over every token it reads (v7 ran model B only when needed), so it is slower per word than
+v7. 3 billion words take about 115 hours of one A30, roughly $115 if rented. On your own machine it is free.
+
+**Parity:** on 120 RAID texts the package (MLX, this repository's engine) gave the same verdict as the official A30
+run every time, with score correlation 0.99992.
 
 ## What is inside
 
 | Path | What |
 |---|---|
-| `src/detectlaw/law/detect_v7.c` | The law: about 150 lines of int32 C. Its header holds the full derivation. |
-| `src/detectlaw/engine.py` | Streams text through the law; runs model B only while the law asks for it. MLX and PyTorch backends. |
+| `src/detectlaw/law/detect_v81.c` | The law: about 325 lines of int32 C, byte-identical to the file used for the official RAID run (sha256 `602d14fd…`). Both modes' constants are generated into it. |
+| `src/detectlaw/law/api_v81.c` | Thin interface: feeds a window to the law and reports each signal's z. Changes no decision. |
+| `src/detectlaw/engine.py` | Streams text through the law in 200-token windows. MLX and PyTorch backends. |
 | `src/detectlaw/server.py`, `web/index.html` | Web app and HTTP API |
 | `src/detectlaw/mcp_server.py` | MCP server |
 | `src/detectlaw/cli.py`, `files.py` | Command line; .txt/.md/.docx/.pdf reading |
-| `tests/eval_v7.c` | Proof harness: exactness, precision against the real-number rule, overflow, sanitizers (`make test`) |
+| `tests/smoke_v81.c` | Extreme and random streams in both modes under `-Werror`, UBSan and ASan (`make test`) |
+| `archive/v7/` | THE DETECT LAW v7, its proof harness (`make test-v7`) and model card, behind the official v7 result |
 
 ## License
 
