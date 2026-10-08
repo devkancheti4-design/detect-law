@@ -6,25 +6,23 @@ repetition), returns `ai`, `no_evidence` or `undecided`. It flags at most 1% of 
 for each writer's own steady style; measured, it flagged 0.22% of 3,200 held-out human RAID texts. It stops
 reading as soon as the evidence is decisive.
 
-**v8.1, our measurements** (RAID's labelled training data; thresholds from human texts, as RAID's evaluator sets them):
+**Official RAID result, v8.1** (672,000-text test set, scored by RAID's evaluation bot on 2026-10-08,
+[liamdugan/raid#216](https://github.com/liamdugan/raid/pull/216), official mode; joins the
+[RAID leaderboard](https://raid-bench.xyz/leaderboard) when merged):
 
-| | v7 | v8.1 |
+| RAID test | v7 | **v8.1** |
 |---|---|---|
-| AI caught at 5% false positives, held-out texts, no attacks | 77.5% | **92.9%** |
-| Average over RAID's 11 attacks, 5% false positives | 77.5% | **90.1%** |
-| Human texts flagged `ai` by the app (careful mode) | 1.59% | **0.22%** |
+| No attacks, 5% false positives | 80.08% | **92.33%** |
+| No attacks, 1% false positives | 68.92% | **86.54%** |
+| All texts incl. 11 attacks, 5% false positives | 77.00% | **88.99%** |
+| All texts incl. 11 attacks, 1% false positives | 63.87% | **81.37%** |
+| AUROC, all texts (no attacks) | 89.86 (90.56) | **96.48 (97.61)** |
 
-v8.1's scores for the full RAID test set were submitted on 2026-10-07
-([liamdugan/raid#216](https://github.com/liamdugan/raid/pull/216)); the official evaluation is pending. From the
-submitted scores we estimate about 89.6% on all 672,000 texts including attacks (the same method gives 76.66% for
-v7's submission, whose official result is 77.00%).
+The highest score among zero-shot detectors on RAID: Binoculars has 78.98% / 69.54% without attacks. v8.1 is ahead of
+Binoculars in all 8 domains and on 9 of the 10 attacks both were scored on. Trained classifiers score higher (up to
+99.98%); v8.1 ranks 27th of 44 detectors on all texts. Its weakest attacks are paraphrase (76.57%) and synonyms (80.83%).
 
-**Official RAID result, v7** (scored by RAID's evaluation bot on 2026-10-06,
-[liamdugan/raid#212](https://github.com/liamdugan/raid/pull/212)): **80.08%** of AI text caught at 5% false
-positives without attacks, ahead of Binoculars (78.98%), the best zero-shot score on the
-[RAID leaderboard](https://raid-bench.xyz/leaderboard) (rank 34 of 43 overall); 77.00% on all texts including 11
-adversarial attacks. Binoculars leads v7 at 1% false positives (69.54% vs 68.92%), and trained classifiers score
-higher (up to 99.98%).
+A 49-second launch film is in [docs/media/detect-law-v81.mp4](docs/media/detect-law-v81.mp4).
 
 **Read [MODEL_CARD.md](MODEL_CARD.md) before using it on real people's work.** The verdict is
 evidence, not proof.

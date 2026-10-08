@@ -95,25 +95,31 @@ of 2^18 tokens run clean under UBSan and ASan; a stop latches; law_score stays w
 
 ## Official benchmark: RAID
 
-**v8.1:** predictions for all 672,000 test texts submitted on 2026-10-07
-([liamdugan/raid#216](https://github.com/liamdugan/raid/pull/216)); the official evaluation is pending. Estimate from
-the submitted scores: about 89.6% on all texts including attacks at 5% FPR, about 81–84% at 1% (the same method gives
-76.66% for v7's submission, against its official 77.00%).
+RAID test set, 672,000 texts (11 generators, 8 domains, 4 sampling settings, 11 attacks), scored by RAID's evaluation
+bot. Metric: share of AI texts caught at a fixed false-positive rate, thresholds set per domain from human texts.
 
-**v7** (official, scored by RAID's bot on 2026-10-06, [liamdugan/raid#212](https://github.com/liamdugan/raid/pull/212)):
+**v8.1** (2026-10-08, [liamdugan/raid#216](https://github.com/liamdugan/raid/pull/216), official mode):
 
 | | 5% FPR | 1% FPR | AUROC |
 |---|---|---|---|
-| No attacks | 80.08% | 68.92% | 90.56 |
-| All texts incl. attacks | 77.00% | 63.87% | 89.86 |
+| No attacks | 92.33% | 86.54% | 97.61 |
+| All texts incl. attacks | 88.99% | 81.37% | 96.48 |
 | Binoculars (official), no attacks | 78.98% | 69.54% | – |
+| v7 (official), no attacks / all texts | 80.08% / 77.00% | 68.92% / 63.87% | 90.56 / 89.86 |
+
+Per domain, no attacks, 5% FPR: abstracts 89.75, books 95.01, news 91.96, poetry 89.37, recipes 91.28, reddit 92.09,
+reviews 94.76, wiki 94.43 (ahead of Binoculars in all 8). Per attack, 5% FPR: whitespace, zero-width space and homoglyph
+92.33 (cleaned before scoring), alternative spelling 91.64, misspelling 91.21, insert paragraphs 91.08, number 90.98,
+upper/lower 88.17, article deletion 88.13, synonym 80.83, paraphrase 76.57. By sampling: greedy 97.38 (no penalty) /
+99.47 (penalty); random sampling 79.95 (no penalty) / 98.64 (penalty). Rank 27 of 44 on all texts. Before the
+official run we estimated 89.6% on all texts from the submitted scores; the official figure is 88.99%.
 
 ## Limits
 
-- **Synonym swapping** hides the surprise signal (75.0% caught at 5% FPR; the contrast signal carries it).
-- **Paraphrase:** ranked well (85.9% at 5% FPR) but the app's verdict usually stays `undecided` (36% labelled `ai`);
-  paraphrasers add repeats, which pushes the repetition signal the wrong way.
-- **Base-model sampling without a repetition penalty** is the hardest case (22.5% labelled `ai`).
+- **Synonym swapping** hides the surprise signal (80.83% on the official test; the contrast signal carries it).
+- **Paraphrase** is the hardest attack: 76.57% at 5% FPR on the official test, and the app's verdict usually stays
+  `undecided` (36% labelled `ai` in our test); paraphrasers add repeats, which pushes the repetition signal the wrong way.
+- **Random sampling without a repetition penalty** is the hardest setting (79.95% officially; 22.5% labelled `ai` by the app for base models).
 - **Frontier models in short texts:** Claude-class text is mostly `undecided` below roughly 800–2,000 tokens.
 - **AI-polished human work is flagged:** the filter sees AI wording, not the origin of the ideas.
 - **More `undecided`:** v8.1 is more cautious per text than v7; most human texts end `undecided`, not `no_evidence`.

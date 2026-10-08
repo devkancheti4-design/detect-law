@@ -13,8 +13,19 @@ RAID_V7 = {
 }
 
 RAID_V81 = {
-    "status": "Submitted to the official RAID leaderboard on 2026-10-07 (github.com/liamdugan/raid/pull/216); "
-              "the official evaluation is pending. Until it lands, the numbers below are our own measurements.",
+    "source": "Official RAID test set (672,000 texts), scored by RAID's evaluation bot on 2026-10-08 "
+              "(github.com/liamdugan/raid/pull/216, awaiting merge to the leaderboard). THE DETECT LAW v8.1, official mode.",
+    "all_texts_including_attacks": {"at_5pct_fpr": 88.99, "at_1pct_fpr": 81.37, "auroc": 96.48},
+    "no_attacks": {"at_5pct_fpr": 92.33, "at_1pct_fpr": 86.54, "auroc": 97.61},
+    "standing": "Highest score among zero-shot detectors on RAID: 92.33 vs Binoculars 78.98 without attacks at 5% FPR "
+                "(86.54 vs 69.54 at 1%). Ahead of Binoculars in all 8 domains. Rank 27 of 44 on all texts; trained "
+                "classifiers score higher (up to 99.98). Ahead of DivEye (trained) on all texts: 88.99 vs 80.62.",
+    "per_domain_no_attacks_5pct": {"abstracts": 89.75, "books": 95.01, "news": 91.96, "poetry": 89.37, "recipes": 91.28,
+                                   "reddit": 92.09, "reviews": 94.76, "wiki": 94.43},
+    "per_attack_5pct": {"none": 92.33, "whitespace": 92.33, "zero_width_space": 92.33, "homoglyph": 92.33,
+                        "alternative_spelling": 91.64, "perplexity_misspelling": 91.21, "insert_paragraphs": 91.08,
+                        "number": 90.98, "upper_lower": 88.17, "article_deletion": 88.13, "synonym": 80.83,
+                        "paraphrase": 76.57},
     "held_out_raid_train_no_attacks": {
         "data": "3,200 held-out human + 1,360 AI RAID training texts (34 generator settings), thresholds from human texts",
         "official_mode": {"at_5pct_fpr": 92.9, "at_1pct_fpr": 88.3},
@@ -33,10 +44,7 @@ RAID_V81 = {
         "mean_at_1pct_fpr": {"v8.1": 84.8, "v7": 64.4},
         "attacked_human_texts_flagged_ai": {"v8.1": "0% on 10 attacks, 1.33% under paraphrase",
                                             "v7": "0-6.7%, 24% under paraphrase"}},
-    "estimate_official_all_attacks": {
-        "at_5pct_fpr": "about 89.6%", "at_1pct_fpr": "about 81-84%",
-        "how": "share of the 672,000 submitted test scores above human thresholds; the same recipe gives 76.66% for v7 "
-               "against its official 77.00%. The attack test's v7 mean (77.5) is also within 0.5 of v7's official result."},
+    "estimate_before_official": "From the submitted scores we had estimated 89.6% on all texts; the official result is 88.99%.",
 }
 
 INFO = {
@@ -58,16 +66,17 @@ INFO = {
                     "ai_flagged_ai": "78.9% (97.3% with repetition penalty, 68.9% without, 86.8% chat models)"},
         "official": {"human_flagged_ai": "0.22% (poetry 1.25%)", "ai_flagged_ai": "80.8% (chat models 90.1%)"},
         "v7_for_comparison": {"careful": "human 1.59%, AI 67.9%", "official": "human 2.84%, AI 72.1%"}},
+    "raid_official": RAID_V81,
     "raid_official_v7": RAID_V7,
-    "raid_v8_1": RAID_V81,
     "parity": "The package's engine reproduces the official A30 run: 120/120 identical verdicts, score correlation 0.99992.",
     "speed_measured": {"nvidia_a30": "about 9,500 tokens/s (official run, 672,000 texts in 5.6 h)",
                        "nvidia_t4": "about 2,200 tokens/s per GPU",
                        "apple_m4_pro_gpu": "about 750 tokens/s (1.7 s per 1,000 words)"},
     "cost": "Runs on your own machine: free, no word limit. On a rented A30 GPU (about $1/hour), 3 billion words "
             "(about 3.9 billion tokens) take about 115 GPU-hours, roughly $115.",
-    "known_limits": ["synonym swapping weakens the surprise signal (75.0% caught at 5% FPR, against 90%+ for most attacks)",
-                     "paraphrased AI text is ranked well (85.9%) but often gets undecided instead of ai (36% flagged)",
+    "known_limits": ["paraphrasing is the hardest RAID attack (76.6% caught at 5% FPR on the official test); the app's "
+                     "verdict on paraphrased AI text usually stays undecided",
+                     "synonym swapping weakens the surprise signal (80.8% on the official test)",
                      "AI text sampled from base models without a repetition penalty is the hardest case (22.5% flagged)",
                      "frontier models (Claude-class) are weakly detected in short texts",
                      "human text heavily rewritten by an AI tool is flagged as AI",

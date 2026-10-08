@@ -4,11 +4,11 @@
 
 | File | What it is |
 |---|---|
+| `raid_official_results_v81.json` | RAID's own evaluation of v8.1, committed by RAID's bot to [liamdugan/raid#216](https://github.com/liamdugan/raid/pull/216) on 2026-10-08. Every split of the 672,000-text test set. Official mode. |
 | `v81_measurements.md` | v8.1 against v7 on RAID's labelled training data: measured constants, app verdicts, RAID's metric, and all 11 RAID attacks (Kaggle runs, 2026-10-07/08). |
 
-The official RAID evaluation of v8.1 ([liamdugan/raid#216](https://github.com/liamdugan/raid/pull/216)) is pending.
-Headline measurements (official mode): 92.9% of AI text caught at 5% false positives on held-out texts without
-attacks (v7: 77.5%), 90.1% averaged over the 11 attacks (v7: 77.5%), 0.22% of human texts labelled `ai` (v7: 2.84%).
+Official RAID result for v8.1: 92.33% of AI text caught at 5% false positives without attacks (86.54% at 1%), 88.99%
+on all texts including the 11 attacks (81.37% at 1%), AUROC 96.48. v7: 80.08% / 77.00%.
 
 The rest of this page is v7's.
 
