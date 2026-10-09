@@ -7,9 +7,9 @@ head = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Zero-shot AI-text detection that runs on your own computer. 92.33% on the official RAID test (88.99% with attacks), the highest zero-shot score, ahead of Binoculars (78.98%).">
+<meta name="description" content="Free, private AI-text detection that runs on your computer. The highest-scoring zero-shot detector on RAID: 92.33% (88.99% with attacks). No account, no word limit.">
 <meta property="og:title" content="Detect Law">
-<meta property="og:description" content="Zero-shot AI-text detection that runs on your own computer. 92.33% on the official RAID test (88.99% with attacks), the highest zero-shot score, ahead of Binoculars (78.98%).">
+<meta property="og:description" content="Free, private AI-text detection that runs on your computer. The highest-scoring zero-shot detector on RAID: 92.33% (88.99% with attacks). No account, no word limit.">
 <style>[hidden]{display:none!important} img{max-width:100%}</style>
 """
 title_end = body.index("</style>") + len("</style>")
