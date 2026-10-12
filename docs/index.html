@@ -109,6 +109,7 @@ nav.top .pill { background: var(--accent); color: #fff; opacity: 1 !important; p
 .track i { position: absolute; inset: 0 auto 0 0; border-radius: 6px; background: var(--them); }
 .row.us .track i { background: var(--ours); }
 .row.us .lbl, .row.us .val { font-weight: 600; }
+.chart.models .track i { background: var(--ours); }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
 .domains { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 6px; }
 .domains div { background: var(--band); border-radius: 14px; padding: 14px; display: grid; gap: 2px; }
@@ -290,6 +291,23 @@ footer p { margin: 0 0 6px; }
         <div><span>Paraphrasing, the hardest attack</span><b>76.6%</b><s>Binoculars not tested</s></div>
       </div>
     </div>
+
+    <div class="chart models" aria-label="Accuracy by AI model">
+      <h3>Near-perfect on chat models</h3>
+      <span class="fine">Catches 99.6–100% of text from chat-tuned models (Llama 2 chat, ChatGPT, Mistral chat) at 5% false positives, with no training on AI text. AI text caught by the model that wrote it, no attacks.</span>
+      <div class="row us"><span class="lbl">Llama 2 chat</span><div class="track"><i style="width:100%"></i></div><span class="val">100.0</span></div>
+      <div class="row us"><span class="lbl">ChatGPT</span><div class="track"><i style="width:99.75%"></i></div><span class="val">99.8</span></div>
+      <div class="row us"><span class="lbl">Mistral chat</span><div class="track"><i style="width:99.62%"></i></div><span class="val">99.6</span></div>
+      <div class="row"><span class="lbl">MPT chat</span><div class="track"><i style="width:99.47%"></i></div><span class="val">99.5</span></div>
+      <div class="row"><span class="lbl">GPT-4</span><div class="track"><i style="width:98.16%"></i></div><span class="val">98.2</span></div>
+      <div class="row"><span class="lbl">GPT-3</span><div class="track"><i style="width:95.22%"></i></div><span class="val">95.2</span></div>
+      <div class="row"><span class="lbl">Cohere chat</span><div class="track"><i style="width:89.34%"></i></div><span class="val">89.3</span></div>
+      <div class="row"><span class="lbl">GPT-2</span><div class="track"><i style="width:88.27%"></i></div><span class="val">88.3</span></div>
+      <div class="row"><span class="lbl">MPT</span><div class="track"><i style="width:83.06%"></i></div><span class="val">83.1</span></div>
+      <div class="row"><span class="lbl">Mistral</span><div class="track"><i style="width:82.25%"></i></div><span class="val">82.3</span></div>
+      <div class="row"><span class="lbl">Cohere</span><div class="track"><i style="width:81.81%"></i></div><span class="val">81.8</span></div>
+      <span class="fine">Base models with random sampling are harder to detect. RAID's models date from 2023.</span>
+    </div>
     <p class="fine" style="margin-top:18px">Official results from RAID's evaluation service, 8 October 2026 (<a href="https://github.com/liamdugan/raid/pull/216">submission</a>); listed on the <a href="https://raid-bench.xyz/leaderboard">RAID leaderboard</a> once merged. Trained commercial detectors score higher on RAID. Detect Law is the top detector that needs no training on AI text.</p>
   </div>
 </section>
@@ -435,7 +453,7 @@ footer p { margin: 0 0 6px; }
       <details><summary>Is Detect Law really free?</summary><p>Yes. It runs on your own computer, so there is no server cost to pass on: no account, no credit card, no word limit and no trial period.</p></details>
       <details><summary>Is my text private?</summary><p>Yes. Every check runs locally, and nothing you check is uploaded or stored anywhere else. After the one-time download it works offline.</p></details>
       <details><summary>How accurate is it?</summary><p>On RAID's official test of 672,000 texts it caught 92.33% of AI-written text while flagging 5% of human text, 88.99% including adversarial attacks, and 86.54% at a strict 1% false-positive rate. That is the highest score of any zero-shot detector on RAID. Trained commercial detectors score higher on RAID; Detect Law needs no training on AI text and costs nothing.</p></details>
-      <details><summary>Which AI models can it detect?</summary><p>On RAID it was tested on text from ChatGPT, GPT-4, GPT-3, GPT-2, Llama chat, Mistral, MPT and Cohere models, catching 82% to 100% depending on the model. Newer frontier models are harder to detect in short texts; longer documents give much stronger evidence.</p></details>
+      <details><summary>Which AI models can it detect?</summary><p>On RAID it was tested on text from ChatGPT, GPT-4, GPT-3, GPT-2, Llama chat, Mistral, MPT and Cohere models, catching 82% to 100% depending on the model. Text from chat models (Llama 2 chat, ChatGPT, Mistral chat) was caught 99.6–100% of the time. Newer frontier models are harder to detect in short texts; longer documents give much stronger evidence.</p></details>
       <details><summary>What do the three verdicts mean?</summary><p>AI evidence: the text shows statistical evidence of AI writing. No evidence: an AI-sized effect was ruled out. Undecided: no significant evidence either way, which is where most human writing ends up.</p></details>
       <details><summary>Can a verdict prove someone used AI?</summary><p>No. A verdict is statistical evidence, not proof, and a small share of human texts are flagged (0.22% in our tests, more for poetry). Use it to decide what a person should read closely, never to penalise anyone automatically. Human writing heavily polished by an AI tool can also be flagged.</p></details>
       <details><summary>Does it work on paraphrased text?</summary><p>Partly. Paraphrasing is the hardest attack: Detect Law caught 76.6% of paraphrased AI text on RAID, and paraphrased text is often marked Undecided.</p></details>
