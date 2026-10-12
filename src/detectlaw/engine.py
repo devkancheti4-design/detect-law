@@ -69,7 +69,7 @@ def prose(text, strip_references=True):
         if strip_references and re.match(r"^(REFERENCES|References|Bibliography|BIBLIOGRAPHY)\b", line):
             break
         w = line.split()
-        if line.endswith(":") or re.search(r"(expressed|represented|calculated|given|defined) as$|is$", line):
+        if line.endswith(":") or re.search(r"\b(expressed|represented|calculated|given|defined) as$|\bis$", line):
             continue
         if (len(w) <= 8 and not line.endswith(".")) or line.lower().startswith(("where ", "keywords")) or len(w) < 6:
             continue

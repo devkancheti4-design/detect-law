@@ -46,7 +46,7 @@ models download once from Hugging Face: `unsloth/Llama-3.2-1B` plus `mlx-communi
 detect-law-server            # then open http://127.0.0.1:8765
 ```
 
-Paste text or drop a .txt, .md, .docx or .pdf file. Nothing leaves your computer.
+Paste text or drop .txt, .md, .docx or .pdf files (several at once gives a list of verdicts). Nothing leaves your computer.
 
 **Command line**
 

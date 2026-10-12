@@ -62,6 +62,14 @@ button:focus-visible, .file:focus-within { outline: 3px solid color-mix(in srgb,
 .scale { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
 .facts { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
 details { font-size: 14px; color: var(--muted); }
+.many { display: grid; }
+.many > details, .many > .row { border-top: 1px solid var(--line); padding: 12px 0; }
+.many summary, .many > .row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; cursor: pointer; }
+.many > details[open] { display: grid; gap: 14px; }
+.many .name { color: var(--ink); font-size: 15px; min-width: 0; overflow-wrap: anywhere; }
+.many .facts { margin-left: auto; }
+.word-sm { font: 600 17px/1.2 var(--display); min-width: 9.5em; }
+.v-ai .word-sm { color: var(--ai); } .v-no_evidence .word-sm { color: var(--ok); } .v-undecided .word-sm { color: var(--wait); }
 pre { overflow-x: auto; background: var(--field); border-radius: 12px; padding: 14px; font: 12.5px/1.5 var(--mono); color: var(--ink); }
 .err { color: var(--ai); font-size: 15px; }
 .busy { display: inline-block; width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -3px; }
@@ -80,7 +88,7 @@ footer a { color: var(--accent); text-decoration: none; }
   </header>
 
   <section class="card" id="input">
-    <label for="text" class="privacy" style="display:block;margin:0 0 10px 4px">Paste text, or drop a .txt, .md, .docx or .pdf file</label>
+    <label for="text" class="privacy" style="display:block;margin:0 0 10px 4px">Paste text, or drop .txt, .md, .docx or .pdf files (several at once is fine)</label>
     <textarea id="text" placeholder="Paste an essay, article or answer here. 200 words or more works best."></textarea>
     <div class="bar">
       <span class="count" id="count">0 words</span>
@@ -89,7 +97,7 @@ footer a { color: var(--accent); text-decoration: none; }
         <input type="radio" name="mode" id="m-official" value="official"><label for="m-official">Official</label>
       </div>
       <button class="ghost" id="clear" type="button">Clear</button>
-      <label class="file">Open file…<input id="file" type="file" accept=".txt,.md,.docx,.pdf"></label>
+      <label class="file">Open file…<input id="file" type="file" accept=".txt,.md,.docx,.pdf" multiple></label>
       <button class="primary" id="go" type="button" disabled>Check text</button>
     </div>
     <p class="modehelp" id="modehelp"></p>
@@ -133,10 +141,17 @@ function meter(label, z, help) {
 function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
 function show(r) {
-  const e = r.evidence || {};
   out.className = "card v-" + r.verdict;
   out.innerHTML = `
     <div class="verdict"><span class="word">${WORDS[r.verdict]}</span>${r.file ? `<span class="facts">${esc(r.file)}</span>` : ""}</div>
+    ${details(r)}`;
+  out.hidden = false;
+  out.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
+}
+
+function details(r) {
+  const e = r.evidence || {};
+  return `
     <p class="meaning">${esc(r.meaning)}</p>
     <div class="meters">
       ${meter("Surprise · how predictable the wording is", e.surprise_z, "z-score")}
@@ -145,8 +160,6 @@ function show(r) {
     </div>
     <div class="facts">${r.mode === "official" ? "Official" : "Careful"} mode · read ${r.tokens_read.toLocaleString()} of ${r.tokens_in_text.toLocaleString()} tokens${r.decided_early ? " · stopped early, the evidence was decisive" : ""} · ${(r.latency_ms / 1000).toFixed(1)} s</div>
     <details><summary>Full result</summary><pre>${esc(JSON.stringify(r, null, 2))}</pre></details>`;
-  out.hidden = false;
-  out.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
 }
 function fail(msg) { out.className = "card"; out.innerHTML = `<p class="err">${esc(msg)}</p>`; out.hidden = false; }
 
@@ -164,17 +177,58 @@ async function run(req) {
 go.addEventListener("click", () => run(() => fetch("/v1/detect", {
   method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: text.value, mode: mode() }) })));
 
-async function openFile(f) {
-  if (!f) return;
-  if (/\.(txt|md)$/i.test(f.name)) { text.value = await f.text(); update(); return; }
-  if (!/\.(docx|pdf)$/i.test(f.name)) { fail("Use a .txt, .md, .docx or .pdf file."); return; }
-  run(() => fetch("/v1/detect-file?name=" + encodeURIComponent(f.name) + "&mode=" + mode(), { method: "POST", body: f }));
+const OK_FILE = /\.(txt|md|docx|pdf)$/i;
+const checkFile = (f) => fetch("/v1/detect-file?name=" + encodeURIComponent(f.name) + "&mode=" + mode(), { method: "POST", body: f });
+
+async function openFiles(list) {
+  const files = Array.from(list || []);
+  if (!files.length) return;
+  if (files.length === 1) {
+    const f = files[0];
+    if (/\.(txt|md)$/i.test(f.name)) { text.value = await f.text(); update(); return; }
+    if (!OK_FILE.test(f.name)) { fail("Use a .txt, .md, .docx or .pdf file."); return; }
+    run(() => checkFile(f));
+    return;
+  }
+  // several files: check them one after another and list the verdicts
+  go.disabled = true;
+  const rows = files.map(() => null);
+  const render = (done) => {
+    out.className = "card";
+    out.innerHTML = `<div class="verdict"><span class="word">${done ? files.length + " files checked" : "Checking " + files.length + " files"}</span></div>
+      <div class="many">${files.map((f, i) => {
+        const r = rows[i];
+        if (!r) return `<div class="row"><span class="busy"></span><span class="name">${esc(f.name)}</span></div>`;
+        if (r.error) return `<div class="row"><b class="word-sm err">Not checked</b><span class="name">${esc(f.name)}</span><span class="facts">${esc(r.error)}</span></div>`;
+        return `<details class="v-${r.verdict}"><summary><b class="word-sm">${WORDS[r.verdict]}</b><span class="name">${esc(f.name)}</span>
+          <span class="facts">${r.tokens_read.toLocaleString()} tokens read</span></summary>${details(r)}</details>`;
+      }).join("")}</div>`;
+    out.hidden = false;
+  };
+  render(false);
+  out.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
+  for (const [i, f] of files.entries()) {
+    try {
+      if (!OK_FILE.test(f.name)) throw new Error("Use a .txt, .md, .docx or .pdf file.");
+      const res = await checkFile(f);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof body.detail === "string" ? body.detail : "The check failed (" + res.status + ").");
+      rows[i] = body;
+    } catch (err) {
+      rows[i] = { error: err.message.includes("fetch") ? "Can’t reach the detector. Is detect-law-server still running?" : err.message };
+    }
+    render(i === files.length - 1);
+  }
+  update();
 }
-$("file").addEventListener("change", (e) => { openFile(e.target.files[0]); e.target.value = ""; });
+$("file").addEventListener("change", (e) => { openFiles(e.target.files); e.target.value = ""; });
+// drop files anywhere on the page (the browser would otherwise open the PDF and leave the app)
 const card = $("input");
-card.addEventListener("dragover", (e) => { e.preventDefault(); card.classList.add("drop"); });
-card.addEventListener("dragleave", () => card.classList.remove("drop"));
-card.addEventListener("drop", (e) => { e.preventDefault(); card.classList.remove("drop"); openFile(e.dataTransfer.files[0]); });
+let dragDepth = 0;
+window.addEventListener("dragenter", (e) => { e.preventDefault(); dragDepth++; card.classList.add("drop"); });
+window.addEventListener("dragover", (e) => e.preventDefault());
+window.addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; card.classList.remove("drop"); } });
+window.addEventListener("drop", (e) => { e.preventDefault(); dragDepth = 0; card.classList.remove("drop"); openFiles(e.dataTransfer.files); });
 update();
 </script>
 </body>

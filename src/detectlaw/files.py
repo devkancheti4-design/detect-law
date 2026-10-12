@@ -14,14 +14,39 @@ def _docx(path):
     return "\n".join(paras)
 
 
+def _reflow(text):
+    """PDF text comes as layout lines: join a paragraph's wrapped lines, undo end-of-line hyphens, drop page numbers."""
+    paras, cur = [], ""
+    for raw in text.splitlines():
+        s = raw.strip()
+        if re.fullmatch(r"\d{1,4}", s):                      # bare page number
+            continue
+        if not s:
+            if cur:
+                paras.append(cur); cur = ""
+            continue
+        if cur.endswith("-") and s[:1].islower():
+            cur = cur[:-1] + s                               # hyphenated across lines
+        elif cur and not re.search(r"[.!?:;\"”’)\]]$", cur) and not (len(cur.split()) <= 8 and s[:1].isupper()):
+            cur += " " + s                                   # wrapped line of the same paragraph
+        else:
+            if cur:
+                paras.append(cur)
+            cur = s
+    if cur:
+        paras.append(cur)
+    return "\n".join(paras)
+
+
 def _pdf(path):
     try:
         from pypdf import PdfReader
-        return "\n".join(page.extract_text() or "" for page in PdfReader(path).pages)
+        return _reflow("\n".join(page.extract_text() or "" for page in PdfReader(path).pages))
     except ImportError:
         pass
     if shutil.which("pdftotext"):
-        return subprocess.run(["pdftotext", "-enc", "UTF-8", path, "-"], capture_output=True, text=True, check=True).stdout
+        out = subprocess.run(["pdftotext", "-enc", "UTF-8", path, "-"], capture_output=True, text=True, check=True).stdout
+        return _reflow(out)
     raise ValueError("reading PDFs needs either `pip install pypdf` or the pdftotext tool")
 
 
