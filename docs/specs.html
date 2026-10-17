@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Technical specifications of Detect Law (THE DETECT LAW v8.1): models, pipeline, output, official RAID accuracy, speed, interfaces and known limits.">
+<meta property="og:title" content="Detect Law · Specs">
+<meta property="og:description" content="Models, pipeline, official RAID accuracy, speed, interfaces and known limits of Detect Law v8.1.">
+<title>Detect Law Specs</title>
+<style>
+/* Specification sheet: same tokens, nav and footer as the product page; one 880px column of labelled tables. */
+:root {
+  --bg: #fbfbfd; --band: #f5f5f7; --surface: #ffffff; --ink: #1d1d1f; --muted: #6e6e73; --line: #d2d2d7;
+  --accent: #0071e3; --ours: #0071e3; --nav: rgba(251, 251, 253, 0.78); --code: #f0f0f3;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --band: #0d0d0f; --surface: #1c1c1e; --ink: #f5f5f7; --muted: #a1a1a6; --line: #38383a;
+    --accent: #2997ff; --ours: #2997ff; --nav: rgba(0, 0, 0, 0.72); --code: #1c1c1e; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --band: #0d0d0f; --surface: #1c1c1e; --ink: #f5f5f7; --muted: #a1a1a6; --line: #38383a;
+  --accent: #2997ff; --ours: #2997ff; --nav: rgba(0, 0, 0, 0.72); --code: #1c1c1e; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font: 17px/1.47 var(--sans); -webkit-font-smoothing: antialiased; margin: 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 22px; }
+.col { max-width: 880px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(40px, 6vw, 60px); line-height: 1.05; font-weight: 600; letter-spacing: -0.015em; }
+h2 { font-size: clamp(26px, 3.4vw, 34px); line-height: 1.1; font-weight: 600; letter-spacing: -0.01em; }
+.eyebrow { font-size: 15px; font-weight: 600; color: var(--accent); margin: 0 0 10px; }
+.lead { font-size: clamp(19px, 2.3vw, 22px); line-height: 1.4; color: var(--muted); margin: 16px 0 0; max-width: 54ch; }
+.fine { font-size: 13px; line-height: 1.5; color: var(--muted); }
+nav.top { position: sticky; top: 0; z-index: 10; background: var(--nav); backdrop-filter: saturate(180%) blur(20px);
+          -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+nav.top .wrap { display: flex; align-items: center; gap: 24px; height: 56px; overflow-x: auto; scrollbar-width: none; }
+nav.top .brand { font: 700 19px/1 var(--display); color: var(--ink); margin-right: auto; white-space: nowrap; display: inline-flex; align-items: center; gap: 9px; }
+nav.top .brand i { width: 22px; height: 22px; border-radius: 7px; background: linear-gradient(135deg, var(--accent), #8e5cf7); display: inline-block; }
+nav.top a:not(.brand) { font-size: 14px; color: var(--ink); opacity: .82; white-space: nowrap; }
+nav.top a.on { opacity: 1; font-weight: 600; }
+nav.top .pill { background: var(--accent); color: #fff; opacity: 1 !important; padding: 7px 15px; border-radius: 980px; font-weight: 500; }
+header.intro { padding-block: 72px 24px; }
+main section { padding-block: 34px; border-top: 1px solid var(--line); scroll-margin-top: 60px; }
+main section h2 { margin-bottom: 18px; }
+.panel { background: var(--surface); border-radius: 22px; padding: 8px 26px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 28px rgba(0,0,0,.06); overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 16px; }
+th, td { text-align: left; padding: 13px 10px 13px 0; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: anywhere; }
+tr:last-child th, tr:last-child td { border-bottom: 0; }
+thead th { font-size: 13px; font-weight: 600; color: var(--muted); }
+tbody th { font-weight: 600; width: 32%; padding-right: 18px; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+ol.steps { margin: 0; padding: 4px 0 4px 22px; display: grid; gap: 14px; }
+ol.steps li { padding-left: 6px; }
+ol.steps li b { font-weight: 600; }
+ul.plain { margin: 0; padding: 4px 0 4px 20px; display: grid; gap: 10px; }
+code { font: 14px/1.4 var(--mono); background: var(--code); padding: 2px 6px; border-radius: 6px; }
+.note { margin: 14px 0 0; color: var(--muted); font-size: 15px; max-width: 72ch; }
+footer { padding-block: 40px 56px; border-top: 1px solid var(--line); margin-top: 40px; }
+footer .cols { display: flex; justify-content: space-between; gap: 22px; flex-wrap: wrap; }
+footer p { margin: 0 0 6px; }
+@media (max-width: 560px) {
+  .panel { padding: 4px 16px; border-radius: 18px; }
+  table { font-size: 15px; }
+  tbody th { width: 40%; }
+  header.intro { padding-block: 48px 16px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="top" aria-label="Sections">
+  <div class="wrap">
+    <a class="brand" href="./"><i aria-hidden="true"></i>Detect Law</a>
+    <a href="./#accuracy">Accuracy</a>
+    <a href="./#features">Features</a>
+    <a href="./#faq">FAQ</a>
+    <a class="on" href="specs.html" aria-current="page">Specs</a>
+    <a class="pill" href="./#start">Get it free</a>
+  </div>
+</nav>
+
+<header class="intro">
+  <div class="wrap col">
+    <p class="eyebrow">Specifications</p>
+    <h1>Detect Law v8.1</h1>
+    <p class="lead">A zero-shot AI-text detector: two small open models and an exact integer decision rule, with no training on AI text. These specs match the version scored by RAID's official evaluation.</p>
+  </div>
+</header>
+
+<main class="wrap col">
+
+  <section id="identity">
+    <h2>Identity</h2>
+    <div class="panel"><table>
+      <tbody>
+        <tr><th scope="row">Name</th><td>THE DETECT LAW v8.1, package <code>detect-law</code> 0.3.0</td></tr>
+        <tr><th scope="row">Type</th><td>Zero-shot, metric-based. No classifier is trained on AI text.</td></tr>
+        <tr><th scope="row">Decision rule</th><td>Integer-only (int32) sequential statistical test, written in C</td></tr>
+        <tr><th scope="row">Language</th><td>English (RAID is English-only)</td></tr>
+        <tr><th scope="row">Licence</th><td>Code: all rights reserved. Paper: CC BY-NC-ND 4.0, <a href="https://doi.org/10.5281/zenodo.23257822">doi:10.5281/zenodo.23257822</a></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="models">
+    <h2>Models</h2>
+    <div class="panel"><table>
+      <thead><tr><th>Role</th><th>Careful mode (default)</th><th>Official mode (RAID submission)</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">A · base model</th><td>Llama-3.2-1B</td><td>Llama-3.2-1B</td></tr>
+        <tr><th scope="row">B · instruct model</th><td>Llama-3.2-1B-Instruct, 4-bit</td><td>Llama-3.2-1B-Instruct, full precision</td></tr>
+        <tr><th scope="row">Memory</th><td>About 3 GB</td><td>About 5 GB</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Both modes flagged the same 0.22% of held-out human texts; official mode catches slightly more AI text.</p>
+  </section>
+
+  <section id="pipeline">
+    <h2>How a text is checked</h2>
+    <div class="panel"><ol class="steps">
+      <li><b>Normalise.</b> Unicode NFKC, remove invisible format characters (zero-width spaces, soft hyphens), map Cyrillic and Greek look-alike letters to Latin, collapse spacing.</li>
+      <li><b>Clean</b> (app only). Skip headings, table fragments and equation lead-ins, and everything from a References heading on. PDFs are reflowed into paragraphs first.</li>
+      <li><b>Window.</b> Split into 200-token windows, each scored from a fresh start-of-text token; a final window under 100 tokens joins the one before. The RAID run read the first 1,024 tokens of each text.</li>
+      <li><b>Measure every token</b>, with one forward pass of each model:
+        <ul class="plain">
+          <li><b>Surprise:</b> how predictable the token is under model A, against that position's own expected value.</li>
+          <li><b>Contrast:</b> how much more the instruct model B prefers the token than the base model A does, against the expected gap.</li>
+          <li><b>Repetition:</b> whether tokens repeat within the window, against how much probability A already gives tokens it has seen.</li>
+        </ul>
+      </li>
+      <li><b>Decide.</b> An integer sequential test over the three signals stops early when the evidence is decisive, or finishes with an end-of-text test. Its human baseline allows for differences between texts. Every constant comes from 3,200 human RAID training texts (400 per domain). The rule keeps 24 int32 words of state and uses no floating point.</li>
+    </ol></div>
+  </section>
+
+  <section id="output">
+    <h2>Output</h2>
+    <div class="panel"><table>
+      <tbody>
+        <tr><th scope="row">Verdict</th><td>AI evidence, No evidence of AI, or Undecided</td></tr>
+        <tr><th scope="row">Evidence</th><td>A z-score for each signal: surprise, contrast, repetition</td></tr>
+        <tr><th scope="row">Score</th><td>law_score = Σ max(z, 0)² × 256, an integer. Benchmark scale: √(law_score ÷ 256)</td></tr>
+        <tr><th scope="row">Also returned</th><td>Tokens read vs tokens in the text, whether it stopped early, time taken</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="accuracy">
+    <h2>Accuracy on RAID</h2>
+    <div class="panel"><table>
+      <thead><tr><th>Official evaluation, 672,000 texts</th><th class="n">5% FPR</th><th class="n">1% FPR</th><th class="n">AUROC</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">All texts, including 11 attacks</th><td class="n">88.99%</td><td class="n">81.37%</td><td class="n">96.48</td></tr>
+        <tr><th scope="row">No attacks</th><td class="n">92.33%</td><td class="n">86.54%</td><td class="n">97.61</td></tr>
+      </tbody>
+    </table></div>
+    <div class="panel" style="margin-top:16px"><table>
+      <tbody>
+        <tr><th scope="row">By AI model</th><td>99.6–100% on Llama 2 chat, ChatGPT and Mistral chat; 82–88% on base models with random sampling</td></tr>
+        <tr><th scope="row">By kind of writing</th><td>89.4% (poetry) to 95.0% (books)</td></tr>
+        <tr><th scope="row">Under attack</th><td>No loss from look-alike letters, zero-width characters or extra spacing. Hardest: paraphrasing (76.6%) and synonym swaps (80.8%).</td></tr>
+        <tr><th scope="row">Human texts flagged</th><td>0.22% of 3,200 held-out texts; worst kind of writing poetry 1.25%; none of the texts over 600 tokens</td></tr>
+        <tr><th scope="row">Standing</th><td>Top zero-shot detector on RAID; 27th of 44 overall. Trained commercial detectors score higher.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">AI text caught at a fixed false-positive rate (FPR) on human text. Official results from RAID's evaluation service, 8 October 2026.</p>
+  </section>
+
+  <section id="speed">
+    <h2>Speed and cost</h2>
+    <div class="panel"><table>
+      <thead><tr><th>Hardware</th><th class="n">Tokens per second</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">A40 GPU (the full RAID test set in about 4.3 hours)</th><td class="n">about 12,800</td></tr>
+        <tr><th scope="row">Kaggle T4 GPU</th><td class="n">about 1,000</td></tr>
+        <tr><th scope="row">Mac M4 Pro (MLX)</th><td class="n">about 750–900</td></tr>
+        <tr><th scope="row">4-core CPU</th><td class="n">about 430</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">One forward pass of each 1B model per token, with no perturbations or sampling. About $0.01–0.03 per million words on rented GPUs.</p>
+  </section>
+
+  <section id="interfaces">
+    <h2>Interfaces</h2>
+    <div class="panel"><table>
+      <tbody>
+        <tr><th scope="row">Web app</th><td>Runs locally on port 8765. Paste text, or drop .txt, .md, .docx or .pdf files, several at once.</td></tr>
+        <tr><th scope="row">Command line</th><td><code>detect-law file1.pdf file2.docx …</code></td></tr>
+        <tr><th scope="row">HTTP API</th><td><code>/v1/detect</code> (text), <code>/v1/detect-file</code> (file bytes), <code>/v1/health</code>, <code>/v1/info</code></td></tr>
+        <tr><th scope="row">MCP server</th><td>Tools <code>check_text</code>, <code>check_file</code>, <code>about_detect_law</code> for Claude</td></tr>
+        <tr><th scope="row">Limits</th><td>300,000 characters per text, 20 MB per file. Text never leaves the computer.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="limits">
+    <h2>Known limits</h2>
+    <div class="panel"><ul class="plain">
+      <li>Texts under about 120 words are often Undecided.</li>
+      <li>Paraphrased text and base models with plain random sampling are the hardest cases.</li>
+      <li>RAID's AI models date from 2023. Short texts from current frontier models are harder to catch.</li>
+      <li>Scanned PDFs (page images only) contain no text to read.</li>
+      <li>The constants were set on RAID's human training texts.</li>
+      <li>Not yet tested on non-native English writers.</li>
+    </ul></div>
+    <p class="note">A verdict is statistical evidence, not proof. Send AI verdicts to a person for review, never to automatic penalties.</p>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap fine cols">
+    <div>
+      <p><b>Detect Law</b> · free, private AI-text detection</p>
+      <p>Specs last updated 17 October 2026. Not affiliated with the RAID authors.</p>
+    </div>
+    <div>
+      <p><a href="./">Home</a> · <a href="https://github.com/devkancheti4-design/detect-law">GitHub</a> · <a href="https://raid-bench.xyz/leaderboard">RAID leaderboard</a></p>
+      <p>Built with Llama (Llama 3.2 Community License). © 2026 Detect Law. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
